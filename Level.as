@@ -99,7 +99,9 @@
 			
 			// collide against floor/ceiling
 			
-			if (ball.y < 0) { velocity.y *= -1; ball.y = 0; }
+			var bounced: Boolean = false;
+			
+			if (ball.y < 0) { velocity.y *= -1; ball.y = 0; bounced = true; }
 			else if (ball.y > 480-6-8) {
 				var paddleDiff: Number = ball.x - paddle;
 				
@@ -113,8 +115,12 @@
 					velocity.y *= -1;
 					velocity.y -= 0.05;
 					ball.y = 480-6-8;
+					
+					bounced = true;
 				} else if (ball.y > 480) {
 					ball.y = 200;
+					
+					// TODO: lose life
 				}
 			}
 			
@@ -134,10 +140,10 @@
 				
 				ix = ix2;
 				
-				if ((iy < 8 || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
+				/*if ((iy < 8 || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
 					missing[lookup] = true;
 					Main.score.value += 10;
-				}
+				}*/
 				
 				hit = true;
 			}
@@ -155,10 +161,10 @@
 				
 				iy = iy2;
 				
-				if ((iy < 8 || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
+				/*if ((iy < 8 || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
 					missing[lookup] = true;
 					Main.score.value += 10;
-				}
+				}*/
 				
 				hit = true;
 			}
@@ -167,6 +173,10 @@
 			
 			if (hit && Kongregate.api) {
 				Kongregate.api.stats.submit("Score", Main.score.value);
+			}
+			
+			if (hit || bounced) {
+				AudioControl.playBounce();
 			}
 			
 			if (ball.x < -32 || ball.x > 640+32-6) { freeCamera = true; }
