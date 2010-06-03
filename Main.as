@@ -12,6 +12,9 @@
 			score = new NumberTextField(320, 160, "", "center", 32);
 			
 			super(640, 480, 60, true);
+			
+			Kongregate.connect(this);
+			
 			FP.world = new Level();
 			
 			addChild(score);
