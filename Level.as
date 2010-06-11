@@ -5,6 +5,7 @@
 	import net.flashpunk.masks.*;
 	import net.flashpunk.utils.*;
 	
+	import flash.display.*;
 	import flash.geom.*;
 	import flash.events.*;
 	import flash.ui.Mouse;
@@ -33,6 +34,12 @@
 		
 		public var focused: Boolean = false;
 		
+		//public var particles: Vector.<MyParticle> = new Vector.<MyParticle>();
+		public var particles: Array = new Array();
+		
+		public var alphaBitmap: BitmapData = null;
+		public var lastBuffer: BitmapData = null;
+		
 		public function Level()
 		{
 			Main.score.value = 0;
@@ -41,6 +48,8 @@
 				missing["-1x" + j] = true;
 				missing["20x" + j] = true;
 			}*/
+			
+			alphaBitmap = new BitmapData(640, 480, true, 0xA0000000);
 		}
 		
 		public override function begin (): void
@@ -132,18 +141,13 @@
 			var ix: int = ix1;
 			var iy: int = iy2;
 			
-			if ((iy < 8 || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
+			if (((iy < 8 && iy > -1) || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
 				missing[lookup] = true;
 				Main.score.value += 10;
 				
+				addParticles(ix, iy);
+				
 				velocity.y *= -1;
-				
-				ix = ix2;
-				
-				/*if ((iy < 8 || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
-					missing[lookup] = true;
-					Main.score.value += 10;
-				}*/
 				
 				hit = true;
 			}
@@ -153,18 +157,13 @@
 			ix = ix2;
 			iy = iy1;
 			
-			if ((iy < 8 || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
+			if (((iy < 8 && iy > -1) || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
 				missing[lookup] = true;
 				Main.score.value += 10;
 				
+				addParticles(ix, iy);
+				
 				velocity.x *= -1;
-				
-				iy = iy2;
-				
-				/*if ((iy < 8 || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
-					missing[lookup] = true;
-					Main.score.value += 10;
-				}*/
 				
 				hit = true;
 			}
@@ -183,17 +182,58 @@
 			
 			/*if (ball.x - FP.camera.x < 0) { ball.x = FP.camera.x; velocity.x = Math.abs(velocity.x); }
 			else if (ball.x - FP.camera.x > 640-6) { ball.x = FP.camera.x + 640-6; velocity.x = -Math.abs(velocity.x); }*/
+		}
+		
+		private function updateParticlesFilter (p: MyParticle, index: int, arr: Array): Boolean
+		{
+			p.oldx = p.x;
+			p.oldy = p.y;
 			
+			p.x += p.dx;
+			p.y += p.dy;
+			
+			//p.dx *= 0.99;
+			p.dy += 0.2;
+			
+			if (p.y > 480 - 8 && p.x > paddle && p.x < paddle + 128) {
+				p.dy = -Math.abs(p.dy) * 0.5;
+				p.oldy = 480-8;
+				p.y = p.oldy + p.dy;
+				
+				if (p.dy > -1) {
+					return false;
+				}
+			} else if (p.y > 480)
+			{
+				// Remove from array
+				return false;
+			}
+			
+			// p remains in array
+			return true;
 		}
 		
 		public override function render (): void
 		{
+			particles = particles.filter(updateParticlesFilter);
+			
+			var point: Point = new Point();
+			
+			// render past frame with alpha
+			
+			if (lastBuffer != null) {
+				rect.x = 0;
+				rect.y = 0;
+				rect.width = 640;
+				rect.height = 480;
+				
+				FP.buffer.copyPixels(lastBuffer, rect, point, alphaBitmap, point, true);
+			}
+			
 			// render blocks
 			
 			rect.width = 32;
 			rect.height = 16;
-			
-			var point: Point = new Point();
 			
 			for (var i: int = 0; i < 22; i++) {
 				var ix: int = Math.floor(FP.camera.x / 32) + i - 1;
@@ -225,6 +265,24 @@
 				}
 			}
 			
+			// render particles
+			
+			rect.width = 4;
+			rect.height = 4;
+			
+			for each (var p: MyParticle in particles) {
+				/*rect.x = p.x - FP.camera.x;
+				rect.y = p.y;
+				
+				FP.buffer.fillRect(rect, p.colour);*/
+				
+				Draw.line(p.oldx, p.oldy, p.x, p.y, p.colour);
+				Draw.line(p.oldx + 1, p.oldy, p.x + 1, p.y, p.colour);
+				
+				//p.oldx = p.x;
+				//p.oldy = p.y;
+			}
+			
 			// render ball
 			
 			rect.width = 6;
@@ -241,6 +299,33 @@
 			point.y = 480-8;
 			
 			paddleImage.render(point, FP.camera);
+			
+			lastBuffer = FP.buffer;
+		}
+		
+		public function addParticles (ix: int, iy: int): void
+		{
+			const bx: int = ix * 32;
+			const by: int = iy * 16;
+			
+			var id: int = Math.floor(ix / 20) * 98317 + Math.floor(iy / 2) * 393241 + 12289;
+			
+			var colour: uint = (0xFF000000 | ( uint(id * 374321)));
+			
+			for (var i: int = 0; i < 8; i++) {
+				for (var j: int = 0; j < 4; j++) {
+					const px: int = bx + i*4;
+					const py: int = by + j*4;
+					
+					var dx: Number = (px - ball.x - 2);
+					var dy: Number = (py - ball.y - 2);
+					
+					dx = dx * (Math.random() + 1) * 0.1 + velocity.x * 0.2;
+					dy = dy * (Math.random() + 1) * 0.1 + velocity.y * 0.2;
+					
+					particles.push(new MyParticle(px, py, dx, dy, colour));
+				}
+			}
 		}
 		
 	}
