@@ -40,9 +40,13 @@
 		public var alphaBitmap: BitmapData = null;
 		public var lastBuffer: BitmapData = null;
 		
+		public var colourOffset: uint;
+		
 		public function Level()
 		{
 			Main.score.value = 0;
+			
+			colourOffset = Math.random() * int.MAX_VALUE;
 			
 			/*for (var j: int = 8; j < 480/16; j++) {
 				missing["-1x" + j] = true;
@@ -50,6 +54,8 @@
 			}*/
 			
 			alphaBitmap = new BitmapData(640, 480, true, 0xA0000000);
+			
+			AudioControl.playMusic();
 		}
 		
 		public override function begin (): void
@@ -174,11 +180,20 @@
 				Kongregate.api.stats.submit("Score", Main.score.value);
 			}
 			
-			if (hit || bounced) {
-				AudioControl.playBounce();
+			if (hit) {
+				AudioControl.playBounceBlock();
 			}
 			
-			if (ball.x < -32 || ball.x > 640+32-6) { freeCamera = true; }
+			if (bounced) {
+				AudioControl.playBouncePaddle();
+			}
+			
+			if (! freeCamera) {
+				if (ball.x < -32 || ball.x > 640+32-6) {
+					freeCamera = true;
+					AudioControl.switchMusic();
+				}
+			}
 			
 			/*if (ball.x - FP.camera.x < 0) { ball.x = FP.camera.x; velocity.x = Math.abs(velocity.x); }
 			else if (ball.x - FP.camera.x > 640-6) { ball.x = FP.camera.x + 640-6; velocity.x = -Math.abs(velocity.x); }*/
@@ -253,7 +268,7 @@
 					point.x = ix * 32;
 					point.y = j * 16;
 					
-					var id: int = Math.floor(ix / 20) * 98317 + Math.floor(j / 2) * 393241 + 12289;
+					var id: int = Math.floor(ix / 20) * 98317 + Math.floor(j / 2) * 393241 + 12289 + colourOffset;
 					
 					var colour: uint = /*(0xFF000000 |*/( uint(id * 374321));
 					
@@ -308,7 +323,7 @@
 			const bx: int = ix * 32;
 			const by: int = iy * 16;
 			
-			var id: int = Math.floor(ix / 20) * 98317 + Math.floor(iy / 2) * 393241 + 12289;
+			var id: int = Math.floor(ix / 20) * 98317 + Math.floor(iy / 2) * 393241 + 12289 + colourOffset;
 			
 			var colour: uint = (0xFF000000 | ( uint(id * 374321)));
 			

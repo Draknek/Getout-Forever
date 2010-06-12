@@ -13,7 +13,7 @@
 			
 			super(640, 480, 60, true);
 			
-			Kongregate.connect(this);
+			//Kongregate.connect(this);
 			
 			FP.world = new Level();
 			

@@ -15,13 +15,26 @@ package
 		
 		public static var mute : Boolean = false;
 		
-		[Embed(source="bounces.mp3")]
-		public static var bounceSfx:Class;
+		[Embed(source="audio/bounce-paddle.mp3")]
+		public static var bouncePaddleSfx:Class;
+		
+		[Embed(source="audio/bounce-block.mp3")]
+		public static var bounceBlockSfx:Class;
+		
+		[Embed(source="audio/music3.mp3")]
+		public static var music2Sfx: Class;
+		
+		[Embed(source="audio/music2.mp3")]
+		public static var music1Sfx: Class;
 		
 		/*private var soundOnImage : Bitmap;
 		private var soundOffImage : Bitmap;*/
 		
-		private static var bounce : Sound = new bounceSfx();
+		private static var bouncePaddle : Sound = new bouncePaddleSfx();
+		private static var bounceBlock : Sound = new bounceBlockSfx();
+		private static var music : Sound = new music1Sfx();
+		
+		private static var musicChannel : SoundChannel;
 		
 		public function AudioControl ()
 		{
@@ -102,17 +115,63 @@ package
 			}
 		}*/
 		
-		public static function playBounce () : void
+		public static function playMusic () : void
 		{
 			if (! mute)
 			{
-				var i : int = (Math.random() * 7);
+				// MP3 encoding annoyingly puts empty space at the beginning: 55ms in this case
+				musicChannel = music.play(55, int.MAX_VALUE);
+			}
+		}
+		
+		public static function stopMusic (): void
+		{
+			if (musicChannel) {
+				musicChannel.stop();
+			}
+		}
+		
+		public static function switchMusic (): void
+		{
+			stopMusic();
+			
+			music = new music2Sfx();
+			
+			playMusic();
+		}
+		
+		public static function playBouncePaddle () : void
+		{
+			if (! mute)
+			{
+				var i : int = (Math.random() * 4);
 				
-				var channel : SoundChannel = bounce.play(i * 2000);
+				var channel : SoundChannel = bouncePaddle.play(i * 1000);
 				
 				if (channel)
 				{
-					var timer : Timer = new Timer(500);
+					var timer : Timer = new Timer(800);
+					timer.addEventListener(TimerEvent.TIMER, runMe);
+					timer.start();
+					
+					function runMe():void{
+					    channel.stop();
+					}
+				}
+			}
+		}
+		
+		public static function playBounceBlock () : void
+		{
+			if (! mute)
+			{
+				var i : int = (Math.random() * 4);
+				
+				var channel : SoundChannel = bounceBlock.play(i * 1000);
+				
+				if (channel)
+				{
+					var timer : Timer = new Timer(800);
 					timer.addEventListener(TimerEvent.TIMER, runMe);
 					timer.start();
 					
