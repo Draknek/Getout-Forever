@@ -121,10 +121,10 @@
 				var paddleDiff: Number = ball.x - paddle;
 				
 				if (paddleDiff > -6 && paddleDiff < 128) {
-					velocity.x = ((paddleDiff + 6) - 67) * 0.05;
+					velocity.x = ((paddleDiff + 6) - 67) * 0.05 * Math.abs(velocity.y) / 3.0;
 					
 					if (freeCamera) {
-						velocity.x += (Input.mouseX - 320) * 0.05;
+						velocity.x += (Input.mouseX - 320) * 0.025;
 					}
 					
 					velocity.y *= -1;
@@ -149,7 +149,12 @@
 			
 			if (((iy < 8 && iy > -1) || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
 				missing[lookup] = true;
-				Main.score.value += 10;
+				
+				var points: int = 10 + int((7 - iy) / 2) * 20;
+				
+				if (iy >= 8) { points = 10; }
+				
+				Main.score.value += points;
 				
 				addParticles(ix, iy);
 				
@@ -165,7 +170,12 @@
 			
 			if (((iy < 8 && iy > -1) || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
 				missing[lookup] = true;
-				Main.score.value += 10;
+				
+				points = 10 + int((7 - iy) / 2) * 20;
+				
+				if (iy >= 8) { points = 10; }
+				
+				Main.score.value += points;
 				
 				addParticles(ix, iy);
 				
