@@ -150,7 +150,7 @@ package
 				
 				if (channel)
 				{
-					var timer : Timer = new Timer(800);
+					var timer : Timer = new Timer(600);
 					timer.addEventListener(TimerEvent.TIMER, runMe);
 					timer.start();
 					
@@ -171,7 +171,7 @@ package
 				
 				if (channel)
 				{
-					var timer : Timer = new Timer(800);
+					var timer : Timer = new Timer(600);
 					timer.addEventListener(TimerEvent.TIMER, runMe);
 					timer.start();
 					

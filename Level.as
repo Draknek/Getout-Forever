@@ -33,6 +33,7 @@
 		public var freeCamera: Boolean = false;
 		
 		public var focused: Boolean = false;
+		public var alive: Boolean = false;
 		
 		//public var particles: Vector.<MyParticle> = new Vector.<MyParticle>();
 		public var particles: Array = new Array();
@@ -44,9 +45,14 @@
 		
 		public function Level()
 		{
+			focusGain();
+			
 			Main.score.value = 0;
 			
 			colourOffset = Math.random() * int.MAX_VALUE;
+			
+			missing["-1x29"] = true;
+			missing["20x29"] = true;
 			
 			/*for (var j: int = 8; j < 480/16; j++) {
 				missing["-1x" + j] = true;
@@ -61,17 +67,37 @@
 		public override function begin (): void
 		{
 			FP.stage.addEventListener(Event.ACTIVATE, focusGain);
-			FP.stage.addEventListener(MouseEvent.MOUSE_DOWN, focusGain);
+			FP.stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseClick);
 			FP.stage.addEventListener(Event.DEACTIVATE, focusLost);
 		}
 		
-		private function focusGain(e:Event):void
+		private function mouseClick(e:Event):void
+		{
+			if (! alive) {
+				alive = true;
+				
+				velocity.y = -3.0 - 0.5 * (Math.abs(velocity.y) - 3.0);
+				velocity.x = 3.5 * Math.abs(velocity.y) / 3.0
+				
+				if (ball.x - FP.camera.x < 320 - 3) {
+					velocity.x *= -1;
+				}
+				
+				if (freeCamera) {
+					velocity.x += (Input.mouseX - 320) * 0.025;
+				}
+			}
+			
+			focusGain();
+		}
+		
+		private function focusGain(e:Event = null):void
 		{
 			focused = true;
 			Mouse.hide();
 		}
 		
-		private function focusLost(e:Event):void
+		private function focusLost(e:Event = null):void
 		{
 			focused = false;
 			Mouse.show();
@@ -79,9 +105,16 @@
 		
 		public override function update (): void
 		{
-			if (! focused) { return; }
+			if (! focused && alive) { return; }
 			
 			paddle = Input.mouseX - 64 + FP.camera.x;
+			
+			if (! alive) {
+				ball.x = paddle + 64 - 3;
+				ball.y = 480 - 14;
+				
+				return;
+			}
 			
 			if (freeCamera) {
 				FP.camera.x += (Input.mouseX - 320) * 0.05;
@@ -133,9 +166,7 @@
 					
 					bounced = true;
 				} else if (ball.y > 480) {
-					ball.y = 200;
-					
-					// TODO: lose life
+					alive = false;
 				}
 			}
 			
@@ -184,7 +215,27 @@
 				hit = true;
 			}
 			
-			// TODO: check diagonal if hit is false?
+			// check corner
+			
+			ix = ix2;
+			iy = iy2;
+			
+			if (! hit && ((iy < 8 && iy > -1) || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
+				missing[lookup] = true;
+				
+				points = 10 + int((7 - iy) / 2) * 20;
+				
+				if (iy >= 8) { points = 10; }
+				
+				Main.score.value += points;
+				
+				addParticles(ix, iy);
+				
+				velocity.x *= -1;
+				velocity.y *= -1;
+				
+				hit = true;
+			}
 			
 			if (hit && Kongregate.api) {
 				Kongregate.api.stats.submit("Score", Main.score.value);
@@ -302,7 +353,7 @@
 				FP.buffer.fillRect(rect, p.colour);*/
 				
 				Draw.line(p.oldx, p.oldy, p.x, p.y, p.colour);
-				Draw.line(p.oldx + 1, p.oldy, p.x + 1, p.y, p.colour);
+				//Draw.line(p.oldx + 1, p.oldy, p.x + 1, p.y, p.colour);
 				
 				//p.oldx = p.x;
 				//p.oldy = p.y;
