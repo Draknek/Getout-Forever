@@ -12,6 +12,9 @@
 	
 	public class Level extends World
 	{
+		[Embed(source="MODENINE.TTF", fontName='modenine', mimeType='application/x-font')]
+		public static var modeNineFont : Class;
+		
 		[Embed(source="block.png")]
 		public static var blockGfx: Class;
 		
@@ -43,11 +46,23 @@
 		
 		public var colourOffset: uint;
 		
+		public var score: NumberString;
+		public var scoreText: Text;
+		
 		public function Level()
 		{
 			focusGain();
 			
-			Main.score.value = 0;
+			Text.font = "modenine";
+			Text.size = 32;
+			Text.align = "center";
+			
+			scoreText = new Text("0", 320 - 50, 160, 100);
+			scoreText.scrollX = 0;
+			
+			score = new NumberString();
+			
+			score.bind(scoreText, "text");
 			
 			colourOffset = Math.random() * int.MAX_VALUE;
 			
@@ -185,7 +200,7 @@
 				
 				if (iy >= 8) { points = 10; }
 				
-				Main.score.value += points;
+				score.value += points;
 				
 				addParticles(ix, iy);
 				
@@ -206,7 +221,7 @@
 				
 				if (iy >= 8) { points = 10; }
 				
-				Main.score.value += points;
+				score.value += points;
 				
 				addParticles(ix, iy);
 				
@@ -227,7 +242,7 @@
 				
 				if (iy >= 8) { points = 10; }
 				
-				Main.score.value += points;
+				score.value += points;
 				
 				addParticles(ix, iy);
 				
@@ -238,7 +253,7 @@
 			}
 			
 			if (hit && Kongregate.api) {
-				Kongregate.api.stats.submit("Score", Main.score.value);
+				Kongregate.api.stats.submit("Score", score.value);
 			}
 			
 			if (hit) {
@@ -375,6 +390,11 @@
 			point.y = 480-8;
 			
 			paddleImage.render(point, FP.camera);
+			
+			point.x = 0;
+			point.y = 0;
+			
+			scoreText.render(point, FP.camera);
 			
 			lastBuffer = FP.buffer;
 		}
