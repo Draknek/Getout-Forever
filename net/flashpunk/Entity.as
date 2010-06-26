@@ -218,7 +218,7 @@
 		}
 		
 		/**
-		 * Checks if ths Entity overlaps the specified rectangle.
+		 * Checks if this Entity overlaps the specified rectangle.
 		 * @param	x			Virtual x position to place this Entity.
 		 * @param	y			Virtual y position to place this Entity.
 		 * @param	rX			X position of the rectangle.
@@ -230,8 +230,8 @@
 		public function collideRect(x:Number, y:Number, rX:Number, rY:Number, rWidth:Number, rHeight:Number):Boolean
 		{
 			if (!collidable) return false;
-			if (x - originX + width > rX && y - originY + height > rY
-			&& x - originX < rX - rWidth && y - originY < rY - rHeight)
+			if (x - originX + width >= rX && y - originY + height >= rY
+			&& x - originX <= rX + rWidth && y - originY <= rY + rHeight)
 			{
 				if (!_mask) return true;
 				_x = this.x; _y = this.y;
@@ -252,7 +252,7 @@
 		}
 		
 		/**
-		 * Checks if ths Entity overlaps the specified position.
+		 * Checks if this Entity overlaps the specified position.
 		 * @param	x			Virtual x position to place this Entity.
 		 * @param	y			Virtual y position to place this Entity.
 		 * @param	pX			X position.
@@ -372,7 +372,7 @@
 		public function set type(value:String):void
 		{
 			if (_type == value) return;
-			if (!_world)
+			if (!_added)
 			{
 				_type = value;
 				return;
@@ -462,6 +462,7 @@
 		// Entity information.
 		/** @private */ internal var _class:Class;
 		/** @private */ internal var _world:World;
+		/** @private */ internal var _added:Boolean;
 		/** @private */ internal var _type:String = "";
 		/** @private */ internal var _layer:int;
 		/** @private */ internal var _updatePrev:Entity;

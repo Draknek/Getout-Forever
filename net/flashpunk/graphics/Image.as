@@ -2,6 +2,7 @@
 {
 	import flash.display.Bitmap;
 	import flash.display.BitmapData;
+	import flash.display.Graphics;
 	import flash.geom.ColorTransform;
 	import flash.geom.Matrix;
 	import flash.geom.Point;
@@ -9,7 +10,7 @@
 	import net.flashpunk.*;
 	
 	/**
-	 * Performance-optimized animated image. Can be drawn to the screen with transformations.
+	 * Performance-optimized non-animated image. Can be drawn to the screen with transformations.
 	 */
 	public class Image extends Graphic
 	{
@@ -51,7 +52,7 @@
 		
 		/**
 		 * If the image should be drawn transformed with pixel smoothing.
-		 * This will effect drawing performance, but look less pixelly.
+		 * This will affect drawing performance, but look less pixelly.
 		 */
 		public var smooth:Boolean;
 		
@@ -69,13 +70,19 @@
 			}
 			else if (source is BitmapData) _source = source;
 			if (!_source) throw new Error("Invalid source image.");
-			_sourceRect = clipRect ? clipRect : _source.rect;
+			_sourceRect = _source.rect;
+			if (clipRect)
+			{
+				if (!clipRect.width) clipRect.width = _sourceRect.width;
+				if (!clipRect.height) clipRect.height = _sourceRect.height;
+				_sourceRect = clipRect;
+			}
 			_buffer = new BitmapData(_sourceRect.width, _sourceRect.height, true, 0);
 			_bufferRect = _buffer.rect;
 			update();
 		}
 		
-		/** @private Renders the image. */
+		/** @public Renders the image. */
 		override public function render(point:Point, camera:Point):void 
 		{
 			// quit if no graphic is assigned
@@ -114,6 +121,28 @@
 		public static function createRect(width:uint, height:uint, color:uint = 0xFFFFFF):Image
 		{
 			var source:BitmapData = new BitmapData(width, height, true, 0xFF000000 | color);
+			return new Image(source);
+		}
+		
+		/**
+		 * Creates a new circle Image.
+		 * @param	r			Radius of the circle.
+		 * @param	color		Color of the circle.
+		 * @param	alpha		Alpha of the circle.
+		 * @return	A new Image object.
+		 */
+		public static function createCircle (r: uint, color:uint = 0xFFFFFF, alpha: Number = 1): Image
+		{
+			var source:BitmapData = new BitmapData(r*2, r*2, true, 0);
+			
+			var _graphics: Graphics = FP.sprite.graphics;
+			
+			_graphics.clear();
+			_graphics.beginFill(color & 0xFFFFFF, alpha);
+			_graphics.drawCircle(r, r, r);
+			_graphics.endFill();
+			source.draw(FP.sprite);
+			
 			return new Image(source);
 		}
 		
@@ -220,26 +249,31 @@
 		 */
 		public function get height():uint { return _bufferRect.height; }
 		
-		/** @private Source BitmapData image. */
+		/**
+		 * Clipping rectangle for the image.
+		 */
+		public function get clipRect():Rectangle { return _sourceRect; }
+		
+		/** @protected Source BitmapData image. */
 		protected function get source():BitmapData { return _source; }
 		
 		// Source and buffer information.
-		/** @private */ private var _source:BitmapData;
-		/** @private */ private var _sourceRect:Rectangle;
-		/** @private */ private var _buffer:BitmapData;
-		/** @private */ private var _bufferRect:Rectangle;
+		/** @protected */ protected var _source:BitmapData;
+		/** @protected */ protected var _sourceRect:Rectangle;
+		/** @protected */ protected var _buffer:BitmapData;
+		/** @protected */ protected var _bufferRect:Rectangle;
 		
 		// Color and alpha information.
-		/** @private */ private var _alpha:Number = 1;
-		/** @private */ private var _color:uint = 0x00FFFFFF;
-		/** @private */ private var _tint:ColorTransform;
-		/** @private */ private var _colorTransform:ColorTransform = new ColorTransform;
-		/** @private */ private var _matrix:Matrix = FP.matrix;
+		/** @protected */ protected var _alpha:Number = 1;
+		/** @protected */ protected var _color:uint = 0x00FFFFFF;
+		/** @protected */ protected var _tint:ColorTransform;
+		/** @protected */ protected var _colorTransform:ColorTransform = new ColorTransform;
+		/** @protected */ protected var _matrix:Matrix = FP.matrix;
 		
 		// Flipped image information.
-		/** @private */ private var _class:String;
-		/** @private */ protected var _flipped:Boolean;
-		/** @private */ private var _flip:BitmapData;
-		/** @private */ private static var _flips:Object = { };
+		/** @protected */ protected var _class:String;
+		/** @protected */ protected var _flipped:Boolean;
+		/** @protected */ protected var _flip:BitmapData;
+		/** @protected */ protected static var _flips:Object = { };
 	}
 }

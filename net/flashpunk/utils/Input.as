@@ -38,6 +38,24 @@
 		public static var mouseReleased:Boolean = false;
 		
 		/**
+		 * If the mouse wheel was moved this frame.
+		 */
+		public static var mouseWheel:Boolean = false; 
+		
+		/**
+		 * If the mouse wheel was moved this frame, this was the delta.
+		 */
+		public static function get mouseWheelDelta():int
+		{
+			if (mouseWheel)
+			{
+				mouseWheel = false;
+				return _mouseWheelDelta;
+			}
+			return 0;
+		}  
+		
+		/**
 		 * X position of the mouse on the screen.
 		 */
 		public static function get mouseX():int
@@ -101,11 +119,11 @@
 					i:int = v.length;
 				while (i --)
 				{
-					if ((v[i] < 0 && _press.length) || _press.indexOf(v[i]) >= 0) return true;
+					if ((v[i] < 0) ? _pressNum : _press.indexOf(v[i]) >= 0) return true;
 				}
 				return false;
 			}
-			return (input < 0 && _press.length) || _press.indexOf(input) >= 0;
+			return (input < 0) ? _pressNum : _press.indexOf(input) >= 0;
 		}
 		
 		/**
@@ -147,6 +165,7 @@
 				FP.stage.addEventListener(KeyboardEvent.KEY_UP, onKeyUp);
 				FP.stage.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown);
 				FP.stage.addEventListener(MouseEvent.MOUSE_UP, onMouseUp);
+				FP.stage.addEventListener(MouseEvent.MOUSE_WHEEL, onMouseWheel);
 				_enabled = true;
 			}
 		}
@@ -209,7 +228,6 @@
 				mouseDown = true;
 				mouseUp = false;
 				mousePressed = true;
-				mouseReleased = false;
 			}
 		}
 		
@@ -218,8 +236,14 @@
 		{
 			mouseDown = false;
 			mouseUp = true;
-			mousePressed = false;
 			mouseReleased = true;
+		}
+		
+		/** @private Event handler for mouse wheel events */
+		private static function onMouseWheel(e:MouseEvent):void
+		{
+		    mouseWheel = true;
+		    _mouseWheelDelta = e.delta;
 		}
 		
 		// Max amount of characters stored by the keystring.
@@ -233,6 +257,7 @@
 		/** @private */ private static var _release:Vector.<int> = new Vector.<int>(256);
 		/** @private */ private static var _pressNum:int = 0;
 		/** @private */ private static var _releaseNum:int = 0;
-		/** @private */ private static var _control:Array = [];
+		/** @private */ private static var _control:Object = {};
+		/** @private */ private static var _mouseWheelDelta:int = 0;
 	}
 }

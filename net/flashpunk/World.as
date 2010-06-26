@@ -226,7 +226,7 @@
 		 * Clears stored reycled Entities of the Class type.
 		 * @param	classType		The Class type to clear.
 		 */
-		public function clearRecycled(classType:Class):void
+		public static function clearRecycled(classType:Class):void
 		{
 			var e:Entity = _recycled[classType],
 				n:Entity;
@@ -243,7 +243,7 @@
 		/**
 		 * Clears stored recycled Entities of all Class types.
 		 */
-		public function clearRecycledAll():void
+		public static function clearRecycledAll():void
 		{
 			for (var classType:Object in _recycled) clearRecycled(classType as Class);
 			FP.cleanup();
@@ -660,7 +660,7 @@
 		public function get uniqueTypes():uint
 		{
 			var i:uint = 0;
-			for (var type:String in _typeCount) i += _typeCount[type] as uint;
+			for (var type:String in _typeCount) i += 1;
 			return i;
 		}
 		
@@ -745,6 +745,7 @@
 			{
 				for each (e in _remove)
 				{
+					e._added = false;
 					e.removed();
 					removeUpdate(e);
 					removeRender(e);
@@ -759,6 +760,7 @@
 			{
 				for each (e in _add)
 				{
+					e._added = true;
 					addUpdate(e);
 					addRender(e);
 					if (e._type) addType(e);
@@ -839,7 +841,7 @@
 				_renderFirst[e._layer] = e._renderNext
 				if (!e._renderNext)
 				{
-					_layerList[e._layer] = null;
+					_layerList[_layerList.indexOf(e._layer)] = null;
 					_layerSort = true;
 				}
 			}
@@ -860,7 +862,7 @@
 			else
 			{
 				e._typeNext = null;
-				_typeCount[e._type] = 0;
+				_typeCount[e._type] = 1;
 			}
 			e._typePrev = null;
 			_typeFirst[e._type] = e;
@@ -1013,7 +1015,7 @@
 		/** @private */	private var _classCount:Dictionary = new Dictionary;
 		/** @private */	internal var _typeFirst:Object = { };
 		/** @private */	private var _typeCount:Object = { };
-		/** @private */	private var _recycled:Dictionary = new Dictionary;
+		/** @private */	private static var _recycled:Dictionary = new Dictionary;
 		/** @private */	internal var _inherit:Boolean = false;
 		/** @private */	internal var _inheritAll:Boolean = false;
 	}
