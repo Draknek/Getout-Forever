@@ -21,6 +21,9 @@ package
 		[Embed(source="audio/bounce-block.mp3")]
 		public static var bounceBlockSfx:Class;
 		
+		[Embed(source="audio/death.mp3")]
+		public static var deathSfx:Class;
+		
 		[Embed(source="audio/music3.mp3")]
 		public static var music2Sfx: Class;
 		
@@ -32,6 +35,7 @@ package
 		
 		private static var bouncePaddle : Sound = new bouncePaddleSfx();
 		private static var bounceBlock : Sound = new bounceBlockSfx();
+		private static var death : Sound = new deathSfx();
 		private static var music : Sound = new music1Sfx();
 		
 		private static var musicChannel : SoundChannel;
@@ -181,6 +185,15 @@ package
 				}
 			}
 		}
+		
+		public static function playDeath () : void
+		{
+			if (! mute)
+			{
+				death.play();
+			}
+		}
+		
 	}
 }
 

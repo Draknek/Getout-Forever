@@ -11,16 +11,7 @@
 		
 		public var colour: uint = 0xFFFF0000;
 		
-		public function MyParticle(_x: Number, _y: Number, _dx: Number, _dy: Number, _c: uint) 
-		{
-			x = _x + 2;
-			y = _y + 2;
-			
-			dx = _dx;
-			dy = _dy;
-			
-			colour = _c;
-		}
+		public var recycleNext: MyParticle = null;
 		
 	}
 }

@@ -38,8 +38,10 @@
 		public var focused: Boolean = false;
 		public var alive: Boolean = false;
 		
-		//public var particles: Vector.<MyParticle> = new Vector.<MyParticle>();
-		public var particles: Array = new Array();
+		public var particles: Vector.<MyParticle> = new Vector.<MyParticle>();
+		//public var particles: Array = new Array();
+		
+		public var recycleParticle: MyParticle = null;
 		
 		public var alphaBitmap: BitmapData = null;
 		public var lastBuffer: BitmapData = null;
@@ -182,6 +184,34 @@
 					bounced = true;
 				} else if (ball.y > 480) {
 					alive = false;
+					
+					AudioControl.playDeath();
+					
+					var p: MyParticle;
+					
+					for (var h1: int = 0; h1 < 6; h1++) {
+						for (var h2: int = 0; h2 < 6; h2++) {
+							if (recycleParticle) {
+								p = recycleParticle;
+								recycleParticle = p.recycleNext;
+								p.recycleNext = null;
+							} else {
+								p = new MyParticle;
+							}
+							
+							p.x = p.oldx = ball.x + h1;
+							p.y = p.oldy = ball.y + h2;
+							p.dx = /*-velocity.x +*/ ((h1-2.5) + Math.random() - 0.5) * 0.5 * (h2 + 2) / 6.0;
+							p.dy = -velocity.y + h2 - 2 + Math.random() - 0.5;
+							
+							/*p.dx = p.dx * (Math.random() + 1) * 0.1;
+							p.dy = p.dy * (Math.random() + 1) * 0.1;*/
+							
+							p.colour = 0xFFFFFF;
+							
+							particles.push(p);
+						}
+					}
 				}
 			}
 			
@@ -275,7 +305,7 @@
 			else if (ball.x - FP.camera.x > 640-6) { ball.x = FP.camera.x + 640-6; velocity.x = -Math.abs(velocity.x); }*/
 		}
 		
-		private function updateParticlesFilter (p: MyParticle, index: int, arr: Array): Boolean
+		private function updateParticlesFilter (p: MyParticle, index: int, arr: Vector.<MyParticle>): Boolean
 		{
 			p.oldx = p.x;
 			p.oldy = p.y;
@@ -292,10 +322,15 @@
 				p.y = p.oldy + p.dy;
 				
 				if (p.dy > -1) {
+					p.recycleNext = recycleParticle;
+					recycleParticle = p;
 					return false;
 				}
-			} else if (p.y > 480)
+			}
+			else if (p.y > 490)
 			{
+				p.recycleNext = recycleParticle;
+				recycleParticle = p;
 				// Remove from array
 				return false;
 			}
@@ -410,8 +445,8 @@
 			
 			for (var i: int = 0; i < 8; i++) {
 				for (var j: int = 0; j < 4; j++) {
-					const px: int = bx + i*4;
-					const py: int = by + j*4;
+					const px: int = bx + i*4 + 2;
+					const py: int = by + j*4 + 2;
 					
 					var dx: Number = (px - ball.x - 2);
 					var dy: Number = (py - ball.y - 2);
@@ -419,7 +454,23 @@
 					dx = dx * (Math.random() + 1) * 0.1 + velocity.x * 0.2;
 					dy = dy * (Math.random() + 1) * 0.1 + velocity.y * 0.2;
 					
-					particles.push(new MyParticle(px, py, dx, dy, colour));
+					var p: MyParticle;
+					
+					if (recycleParticle) {
+						p = recycleParticle;
+						recycleParticle = p.recycleNext;
+						p.recycleNext = null;
+					} else {
+						p = new MyParticle;
+					}
+					
+					p.x = p.oldx = px;
+					p.y = p.oldy = py;
+					p.dx = dx;
+					p.dy = dy;
+					p.colour = colour;
+					
+					particles.push(p);
 				}
 			}
 		}
