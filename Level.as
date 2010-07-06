@@ -36,7 +36,8 @@
 		public var freeCamera: Boolean = false;
 		
 		public var focused: Boolean = false;
-		public var alive: Boolean = false;
+		public var ballActive: Boolean = false;
+		public var canStart: Boolean = true;
 		
 		public var particles: Vector.<MyParticle> = new Vector.<MyParticle>();
 		//public var particles: Array = new Array();
@@ -90,8 +91,9 @@
 		
 		private function mouseClick(e:Event):void
 		{
-			if (! alive) {
-				alive = true;
+			if (canStart) {
+				canStart = false;
+				ballActive = true;
 				
 				velocity.y = -3.0 - 0.5 * (Math.abs(velocity.y) - 3.0);
 				velocity.x = 3.5 * Math.abs(velocity.y) / 3.0
@@ -122,11 +124,32 @@
 		
 		public override function update (): void
 		{
-			if (! focused && alive) { return; }
+			AudioControl.rainVolume *= 0.99;
+			
+			if (! focused && ballActive) { return; }
 			
 			paddle = Input.mouseX - 64 + FP.camera.x;
 			
-			if (! alive) {
+			if (! ballActive) {
+				if (! canStart) {
+					var dx: Number = paddle + 64 - 3 - ball.x;
+					var dy: Number = 480 - 14 - ball.y;
+					var dz: Number = Math.sqrt(dx*dx + dy*dy);
+					
+					const speed: Number = velocity.x;
+					
+					velocity.x += 1;
+					
+					if (dz > speed) {
+						ball.x += speed * dx / dz;
+						ball.y += speed * dy / dz;
+						
+						return;
+					} else {
+						canStart = true;
+					}
+				}
+				
 				ball.x = paddle + 64 - 3;
 				ball.y = 480 - 14;
 				
@@ -183,7 +206,7 @@
 					
 					bounced = true;
 				} else if (ball.y > 480) {
-					alive = false;
+					ballActive = false;
 					
 					AudioControl.playDeath();
 					
@@ -212,6 +235,10 @@
 							particles.push(p);
 						}
 					}
+					
+					ball.x = 20 + FP.camera.x;
+					ball.y = 16*8 + 20;
+					velocity.x = 1;
 				}
 			}
 			
@@ -326,6 +353,10 @@
 					recycleParticle = p;
 					return false;
 				}
+				
+				score.value += 1;
+				
+				AudioControl.playBounceParticle();
 			}
 			else if (p.y > 490)
 			{
@@ -416,6 +447,13 @@
 			
 			rect.x = ball.x - FP.camera.x;
 			rect.y = ball.y;
+			
+			FP.buffer.fillRect(rect, 0xFFFFFFFF);
+			
+			// render lives
+			
+			rect.x = 20;
+			rect.y = 16*8 + 20;
 			
 			FP.buffer.fillRect(rect, 0xFFFFFFFF);
 			

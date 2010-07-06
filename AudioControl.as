@@ -21,6 +21,9 @@ package
 		[Embed(source="audio/bounce-block.mp3")]
 		public static var bounceBlockSfx:Class;
 		
+		[Embed(source="audio/rain.mp3")]
+		public static var bounceParticleSfx:Class;
+		
 		[Embed(source="audio/death.mp3")]
 		public static var deathSfx:Class;
 		
@@ -35,10 +38,33 @@ package
 		
 		private static var bouncePaddle : Sound = new bouncePaddleSfx();
 		private static var bounceBlock : Sound = new bounceBlockSfx();
+		private static var bounceParticle : Sound = new bounceParticleSfx();
 		private static var death : Sound = new deathSfx();
 		private static var music : Sound = new music1Sfx();
 		
 		private static var musicChannel : SoundChannel;
+		private static var rainChannel : SoundChannel;
+		
+		private static var _rainVolume : Number = 0;
+		
+		public static function get rainVolume (): Number {
+			return _rainVolume;
+		}
+		
+		public static function set rainVolume (value: Number): void {
+			if (value > 1.0) { value = 1.0; }
+			else if (value < 0.0) { value = 0.0; }
+			
+			if (value == _rainVolume) { return; }
+			
+			_rainVolume = value;
+			
+			var transform: SoundTransform = rainChannel.soundTransform;
+			
+			transform.volume = _rainVolume;
+			
+			rainChannel.soundTransform = transform;
+		}
 		
 		public function AudioControl ()
 		{
@@ -125,6 +151,8 @@ package
 			{
 				// MP3 encoding annoyingly puts empty space at the beginning: 55ms in this case
 				musicChannel = music.play(55, int.MAX_VALUE);
+				
+				rainChannel = bounceParticle.play(1000, int.MAX_VALUE, new SoundTransform(0, 0));
 			}
 		}
 		
@@ -132,6 +160,10 @@ package
 		{
 			if (musicChannel) {
 				musicChannel.stop();
+			}
+			
+			if (rainChannel) {
+				rainChannel.stop();
 			}
 		}
 		
@@ -183,6 +215,29 @@ package
 					    channel.stop();
 					}
 				}
+			}
+		}
+		
+		public static function playBounceParticle () : void
+		{
+			if (! mute)
+			{
+				/*var i : int = (Math.random() * 4);
+				
+				var channel : SoundChannel = bounceParticle.play(i * 125);
+				
+				if (channel)
+				{
+					var timer : Timer = new Timer(100);
+					timer.addEventListener(TimerEvent.TIMER, runMe);
+					timer.start();
+					
+					function runMe():void{
+					    channel.stop();
+					}
+				}*/
+				
+				rainVolume += 0.025;
 			}
 		}
 		
