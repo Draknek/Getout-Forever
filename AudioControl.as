@@ -52,7 +52,7 @@ package
 		}
 		
 		public static function set rainVolume (value: Number): void {
-			if (value > 1.0) { value = 1.0; }
+			if (value > 0.5) { value = 0.5; }
 			else if (value < 0.0) { value = 0.0; }
 			
 			if (value == _rainVolume) { return; }
@@ -237,7 +237,7 @@ package
 					}
 				}*/
 				
-				rainVolume += 0.025;
+				rainVolume += 0.1;
 			}
 		}
 		

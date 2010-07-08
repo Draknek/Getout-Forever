@@ -38,6 +38,9 @@
 		public var focused: Boolean = false;
 		public var ballActive: Boolean = false;
 		public var canStart: Boolean = true;
+		public var gameover: Boolean = false;
+		
+		public var lives: int = 3;
 		
 		public var particles: Vector.<MyParticle> = new Vector.<MyParticle>();
 		//public var particles: Array = new Array();
@@ -48,6 +51,10 @@
 		public var lastBuffer: BitmapData = null;
 		
 		public var colourOffset: uint;
+		
+		public var bgColour: Number = 0;
+		
+		public var updateCount: int = 0;
 		
 		public var score: NumberString;
 		public var scoreText: Text;
@@ -80,6 +87,24 @@
 			alphaBitmap = new BitmapData(640, 480, true, 0xA0000000);
 			
 			AudioControl.playMusic();
+			
+			Mochi.startPlay();
+		}
+		
+		public function getColour (ix: int, iy: int): uint
+		{
+			var colour: uint = Math.floor(ix / 20) * 98317 + Math.floor(iy / 2) * 393241 + 12289 + colourOffset;
+			
+			do {
+				colour = uint(colour * 374321);
+				var r: uint = (colour >> 16) & 0xFF;
+				var g: uint = (colour >> 8) & 0xFF;
+				var b: uint = (colour) & 0xFF;
+			}
+			while (r + g + b < 255);
+			
+			
+			return (0xFF000000 | colour);
 		}
 		
 		public override function begin (): void
@@ -91,6 +116,8 @@
 		
 		private function mouseClick(e:Event):void
 		{
+			if (gameover) { return; }
+			
 			if (canStart) {
 				canStart = false;
 				ballActive = true;
@@ -124,9 +151,15 @@
 		
 		public override function update (): void
 		{
+			updateCount++;
+			
 			AudioControl.rainVolume *= 0.99;
 			
+			if (gameover) { return; }
+			
 			if (! focused && ballActive) { return; }
+			
+			bgColour += 0.01;
 			
 			paddle = Input.mouseX - 64 + FP.camera.x;
 			
@@ -236,9 +269,17 @@
 						}
 					}
 					
-					ball.x = 20 + FP.camera.x;
-					ball.y = 16*8 + 20;
-					velocity.x = 1;
+					if (lives > 0) {
+						ball.x = FP.camera.x + 20 * lives;
+						ball.y = 16*8 + 20;
+						velocity.x = 1;
+						
+						lives--;
+					} else {
+						gameover = true;
+						
+						Mochi.endPlay();
+					}
 				}
 			}
 			
@@ -370,22 +411,88 @@
 			return true;
 		}
 		
+		public var lastX: Number = 0;
+		
+		public var blurBuffer1: BitmapData = new BitmapData(640, 480, true, 0);
+		public var blurBuffer2: BitmapData = new BitmapData(640, 480, true, 0);
+		public var colorTransform: ColorTransform = new ColorTransform(1, 1, 1, 0.6);
+		
 		public override function render (): void
 		{
-			particles = particles.filter(updateParticlesFilter);
+			var scrollX: Number = lastX - FP.camera.x;
+			lastX = FP.camera.x;
 			
-			var point: Point = new Point();
-			
-			// render past frame with alpha
-			
-			if (lastBuffer != null) {
+			if (!focused && ballActive && lastBuffer) {
 				rect.x = 0;
 				rect.y = 0;
 				rect.width = 640;
 				rect.height = 480;
 				
-				FP.buffer.copyPixels(lastBuffer, rect, point, alphaBitmap, point, true);
+				FP.buffer.copyPixels(lastBuffer, rect, FP.zero);
+				
+				lastBuffer = FP.buffer;
+				
+				updateCount = 0;
+				
+				return;
 			}
+			
+			rect.x = 0;
+			rect.y = 0;
+			rect.width = 640;
+			rect.height = 480;
+			
+			var t: Number = (bgColour + Input.mouseX / 640.0 / 2.0) % 6;
+			
+			var r: Number, g: Number, b: Number;
+			
+			if (t < 2) {
+				r = 1;
+				g = (t < 1) ? 0 : t - 1;
+				b = (t < 1) ? 1 - t : 0;
+			} else if (t < 4) {
+				t -= 2;
+				g = 1;
+				b = (t < 1) ? 0 : t - 1;
+				r = (t < 1) ? 1 - t : 0;
+			} else {
+				t -= 4;
+				b = 1;
+				r = (t < 1) ? 0 : t - 1;
+				g = (t < 1) ? 1 - t : 0;
+			}
+			
+			FP.buffer.fillRect(rect, 0xFF000000 | (uint(r * 0x30)<<16) | (uint(g * 0x30)<<8) | (uint(b * 0x30)));
+			
+			//if (focused || !ballActive) {
+				particles = particles.filter(updateParticlesFilter);
+			//}
+			
+			var point: Point = new Point();
+			
+			// render past frame with alpha
+			
+			/*if (lastBuffer != null) {
+				rect.x = 0;
+				rect.y = 0;
+				rect.width = 640;
+				rect.height = 480;
+				
+				//FP.buffer.copyPixels(lastBuffer, rect, point, alphaBitmap, point, true);
+				
+				FP.buffer.merge(lastBuffer, rect, FP.zero, 0xA0, 0xA0, 0xA0, 0xA0);
+			}*/
+			
+			lastBuffer = blurBuffer1;
+			blurBuffer1 = blurBuffer2;
+			blurBuffer2 = lastBuffer;
+			
+			point.x = scrollX;
+			point.y = 0;
+			
+			blurBuffer1.fillRect(blurBuffer1.rect, 0);
+			blurBuffer1.copyPixels(blurBuffer2, blurBuffer2.rect, point);
+			blurBuffer1.colorTransform(blurBuffer1.rect, colorTransform);
 			
 			// render blocks
 			
@@ -410,13 +517,7 @@
 					point.x = ix * 32;
 					point.y = j * 16;
 					
-					var id: int = Math.floor(ix / 20) * 98317 + Math.floor(j / 2) * 393241 + 12289 + colourOffset;
-					
-					var colour: uint = /*(0xFF000000 |*/( uint(id * 374321));
-					
-					//FP.buffer.fillRect(rect, colour);
-					
-					block.color = colour;
+					block.color = getColour(ix, j);
 					
 					block.render(point, FP.camera);
 				}
@@ -426,6 +527,8 @@
 			
 			rect.width = 4;
 			rect.height = 4;
+			
+			Draw.setTarget(blurBuffer1, FP.camera);
 			
 			for each (var p: MyParticle in particles) {
 				/*rect.x = p.x - FP.camera.x;
@@ -445,17 +548,29 @@
 			rect.width = 6;
 			rect.height = 6;
 			
-			rect.x = ball.x - FP.camera.x;
-			rect.y = ball.y;
+			for (i = 0; i < updateCount; i++) {
+				rect.x = ball.x - FP.camera.x - velocity.x * i;
+				rect.y = ball.y - velocity.y * i;
+				
+				blurBuffer1.fillRect(rect, 0xFFFFFFFF);
+				
+				if (! ballActive) {
+					break;
+				}
+			}
 			
-			FP.buffer.fillRect(rect, 0xFFFFFFFF);
+			updateCount = 0;
 			
 			// render lives
 			
-			rect.x = 20;
-			rect.y = 16*8 + 20;
+			for (i = 1; i <= lives; i++) {
+				rect.x = 20 * i;
+				rect.y = 16*8 + 20;
+				
+				FP.buffer.fillRect(rect, 0xFFFFFFFF);
+			}
 			
-			FP.buffer.fillRect(rect, 0xFFFFFFFF);
+			FP.buffer.copyPixels(blurBuffer1, blurBuffer1.rect, FP.zero, null, null, true);
 			
 			// render paddle
 			
@@ -477,9 +592,7 @@
 			const bx: int = ix * 32;
 			const by: int = iy * 16;
 			
-			var id: int = Math.floor(ix / 20) * 98317 + Math.floor(iy / 2) * 393241 + 12289 + colourOffset;
-			
-			var colour: uint = (0xFF000000 | ( uint(id * 374321)));
+			var colour: uint = (0xFF000000 | getColour(ix, iy));
 			
 			for (var i: int = 0; i < 8; i++) {
 				for (var j: int = 0; j < 4; j++) {

@@ -10,6 +10,7 @@
 			super(640, 480, 60, true);
 			
 			//Kongregate.connect(this);
+			Mochi.connect(this);
 			
 			FP.world = new Level();
 		}
