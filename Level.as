@@ -29,8 +29,8 @@
 		
 		public var rect: Rectangle = new Rectangle();
 		
-		public var ball: Point = new Point(400, 300);
-		public var oldBall: Point = new Point(400, 300);
+		public var ball: Point = new Point(400, 480 - 14);
+		public var oldBall: Point = new Point(400, 480 - 14);
 		public var velocity: Point = new Point(3.5, 3);
 		public var paddle: Number = 320 - 64;
 		
@@ -41,7 +41,7 @@
 		public var canStart: Boolean = true;
 		public var gameover: Boolean = false;
 		
-		public var lives: int = 3;
+		public var lives: int = 0;
 		
 		public var particles: Vector.<MyParticle> = new Vector.<MyParticle>();
 		//public var particles: Array = new Array();
@@ -61,6 +61,7 @@
 		public var scoreText: Text;
 		
 		public var submitButton: Button;
+		public var replayButton: Button;
 		public var menuButton: Button;
 		
 		public function Level()
@@ -93,8 +94,6 @@
 			AudioControl.playMusic();
 			
 			Mochi.startPlay();
-			
-			FP.engine.addChild(new Button("Hello", 200));
 		}
 		
 		public function getColour (ix: int, iy: int): uint
@@ -127,6 +126,7 @@
 			FP.stage.removeEventListener(Event.DEACTIVATE, focusLost);
 			
 			if (submitButton) FP.engine.removeChild(submitButton);
+			if (replayButton) FP.engine.removeChild(replayButton);
 			if (menuButton) FP.engine.removeChild(menuButton);
 		}
 		
@@ -299,6 +299,27 @@
 						Mochi.endPlay();
 						
 						Mouse.show();
+						
+						submitButton = new Button("Submit", 225)
+						FP.engine.addChild(submitButton);
+						submitButton.addEventListener(MouseEvent.CLICK, function (): void {
+							Mochi.submitScore(score.value);
+						});
+						
+						replayButton = new Button("Replay", 300)
+						FP.engine.addChild(replayButton);
+						replayButton.addEventListener(MouseEvent.CLICK, function (): void {
+							Mochi.closeScores();
+							FP.world = new Level();
+						});
+						
+						menuButton = new Button("Menu", 375)
+						FP.engine.addChild(menuButton);
+						menuButton.addEventListener(MouseEvent.CLICK, function (): void {
+							Mochi.closeScores();
+							FP.world = new Level();
+						});
+						
 					}
 				}
 			}
@@ -568,7 +589,7 @@
 			rect.width = 6;
 			rect.height = 6;
 			
-			if (ballActive || ! canStart) {
+			if (ballActive || ! canStart || ball.y != oldBall.y) {
 				renderBall(ball.x - FP.camera.x, ball.y, oldBall.x - FP.camera.x, oldBall.y);
 			} else {
 				rect.x = ball.x - FP.camera.x;

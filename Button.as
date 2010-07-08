@@ -12,15 +12,37 @@ package
 		[Embed(source="button.png")]
 		public static var buttonGfx : Class;
 		
+		[Embed(source="button-hover.png")]
+		public static var buttonHoverGfx : Class;
+		
 		public var textField: MyTextField;
+		
+		public var bitmap1: Bitmap;
+		public var bitmap2: Bitmap;
 		
 		public function Button (_text: String, _y: Number)
 		{
 			var bg: BitmapData = FP.getBitmap(buttonGfx).clone();
 			
-			bg.colorTransform(bg.rect, new ColorTransform(1, 0, 0));
+			do {
+				var r: Number = Math.random();
+				var g: Number = Math.random();
+				var b: Number = Math.random();
+			}
+			while (r + g + b < 1);
 			
-			addChild(new Bitmap(bg));
+			bg.colorTransform(bg.rect, new ColorTransform(r, g, b));
+			
+			bitmap1 = new Bitmap(bg);
+			
+			bg = FP.getBitmap(buttonHoverGfx).clone();
+			bg.colorTransform(bg.rect, new ColorTransform(r, g, b));
+			bitmap2 = new Bitmap(bg);
+			
+			bitmap2.visible = false;
+			
+			addChild(bitmap1);
+			addChild(bitmap2);
 			
 			x = 320 - bg.width * 0.5;
 			y = _y;
@@ -43,8 +65,8 @@ package
 			buttonMode = true;
 			mouseChildren = false;
 			
-			//addEventListener(MouseEvent.ROLL_OVER, function (param: * = 0) : void {textField.textColor = 0xFFFFFF});
-			//addEventListener(MouseEvent.ROLL_OUT, function (param: * = 0) : void {textField.textColor = 0x000000});
+			addEventListener(MouseEvent.ROLL_OVER, function (param: * = 0) : void {bitmap2.visible = true; bitmap1.visible = false;});
+			addEventListener(MouseEvent.ROLL_OUT, function (param: * = 0) : void {bitmap1.visible = true; bitmap2.visible = false;});
 		}
 		
 	}
