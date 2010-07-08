@@ -30,6 +30,7 @@
 		public var rect: Rectangle = new Rectangle();
 		
 		public var ball: Point = new Point(400, 300);
+		public var oldBall: Point = new Point(400, 300);
 		public var velocity: Point = new Point(3.5, 3);
 		public var paddle: Number = 320 - 64;
 		
@@ -58,6 +59,9 @@
 		
 		public var score: NumberString;
 		public var scoreText: Text;
+		
+		public var submitButton: Button;
+		public var menuButton: Button;
 		
 		public function Level()
 		{
@@ -89,6 +93,8 @@
 			AudioControl.playMusic();
 			
 			Mochi.startPlay();
+			
+			FP.engine.addChild(new Button("Hello", 200));
 		}
 		
 		public function getColour (ix: int, iy: int): uint
@@ -112,6 +118,16 @@
 			FP.stage.addEventListener(Event.ACTIVATE, focusGain);
 			FP.stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseClick);
 			FP.stage.addEventListener(Event.DEACTIVATE, focusLost);
+		}
+		
+		public override function end (): void
+		{
+			FP.stage.removeEventListener(Event.ACTIVATE, focusGain);
+			FP.stage.removeEventListener(MouseEvent.MOUSE_DOWN, mouseClick);
+			FP.stage.removeEventListener(Event.DEACTIVATE, focusLost);
+			
+			if (submitButton) FP.engine.removeChild(submitButton);
+			if (menuButton) FP.engine.removeChild(menuButton);
 		}
 		
 		private function mouseClick(e:Event):void
@@ -155,11 +171,11 @@
 			
 			AudioControl.rainVolume *= 0.99;
 			
+			bgColour += 0.01;
+			
 			if (gameover) { return; }
 			
 			if (! focused && ballActive) { return; }
-			
-			bgColour += 0.01;
 			
 			paddle = Input.mouseX - 64 + FP.camera.x;
 			
@@ -272,6 +288,8 @@
 					if (lives > 0) {
 						ball.x = FP.camera.x + 20 * lives;
 						ball.y = 16*8 + 20;
+						oldBall.x = FP.camera.x + 20 * lives;
+						oldBall.y = 16*8 + 20;
 						velocity.x = 1;
 						
 						lives--;
@@ -279,6 +297,8 @@
 						gameover = true;
 						
 						Mochi.endPlay();
+						
+						Mouse.show();
 					}
 				}
 			}
@@ -415,7 +435,7 @@
 		
 		public var blurBuffer1: BitmapData = new BitmapData(640, 480, true, 0);
 		public var blurBuffer2: BitmapData = new BitmapData(640, 480, true, 0);
-		public var colorTransform: ColorTransform = new ColorTransform(1, 1, 1, 0.6);
+		public var colorTransform: ColorTransform = new ColorTransform(1, 1, 1, 0.8);
 		
 		public override function render (): void
 		{
@@ -548,16 +568,28 @@
 			rect.width = 6;
 			rect.height = 6;
 			
-			for (i = 0; i < updateCount; i++) {
-				rect.x = ball.x - FP.camera.x - velocity.x * i;
-				rect.y = ball.y - velocity.y * i;
+			if (ballActive || ! canStart) {
+				renderBall(ball.x - FP.camera.x, ball.y, oldBall.x - FP.camera.x, oldBall.y);
+			} else {
+				rect.x = ball.x - FP.camera.x;
+				rect.y = ball.y;
 				
-				blurBuffer1.fillRect(rect, 0xFFFFFFFF);
+				FP.buffer.fillRect(rect, 0xFFFFFFFF);
+			}
+			
+			oldBall.x = ball.x;
+			oldBall.y = ball.y;
+			
+			//for (i = 0; i < updateCount; i++) {
+				/*rect.x = ball.x - FP.camera.x //- velocity.x * i;
+				rect.y = ball.y //- velocity.y * i;
 				
-				if (! ballActive) {
+				blurBuffer1.fillRect(rect, 0xFFFFFFFF);*/
+				
+			/*	if (! ballActive) {
 					break;
 				}
-			}
+			}*/
 			
 			updateCount = 0;
 			
@@ -623,6 +655,99 @@
 					
 					particles.push(p);
 				}
+			}
+		}
+		
+		public function renderBall(x1:int, y1:int, x2:int, y2:int):void
+		{
+			// get the drawing positions
+			/*x1 -= _camera.x;
+			y1 -= _camera.y;
+			x2 -= _camera.x;
+			y2 -= _camera.y;*/
+			
+			rect.width = 6;
+			rect.height = 6;
+			
+			// get the drawing difference
+			var screen:BitmapData = blurBuffer1,
+				X:Number = Math.abs(x2 - x1),
+				Y:Number = Math.abs(y2 - y1),
+				xx:int,
+				yy:int;
+			
+			// draw a single pixel
+			if (X == 0)
+			{
+				if (Y == 0)
+				{
+					rect.x = x1; rect.y = y1; screen.fillRect(rect, 0xFFFFFFFF);
+					return;
+				}
+				// draw a straight vertical line
+				yy = y2 > y1 ? 1 : -1;
+				while (y1 != y2)
+				{
+					rect.x = x1; rect.y = y1; screen.fillRect(rect, 0xFFFFFFFF);
+					y1 += yy;
+				}
+				rect.x = x2; rect.y = y2; screen.fillRect(rect, 0xFFFFFFFF);
+				return;
+			}
+			
+			if (Y == 0)
+			{
+				// draw a straight horizontal line
+				xx = x2 > x1 ? 1 : -1;
+				while (x1 != x2)
+				{
+					rect.x = x1; rect.y = y1; screen.fillRect(rect, 0xFFFFFFFF);
+					x1 += xx;
+				}
+				rect.x = x2; rect.y = y2; screen.fillRect(rect, 0xFFFFFFFF);
+				return;
+			}
+			
+			xx = x2 > x1 ? 1 : -1;
+			yy = y2 > y1 ? 1 : -1;
+			var c:Number = 0,
+				slope:Number;
+			
+			if (X > Y)
+			{
+				slope = Y / X;
+				c = .5;
+				while (x1 != x2)
+				{
+					rect.x = x1; rect.y = y1; screen.fillRect(rect, 0xFFFFFFFF);
+					x1 += xx;
+					c += slope;
+					if (c >= 1)
+					{
+						y1 += yy;
+						c -= 1;
+					}
+				}
+				rect.x = x2; rect.y = y2; screen.fillRect(rect, 0xFFFFFFFF);
+				return;
+			}
+			else
+			{
+				slope = X / Y;
+				c = .5;
+				while (y1 != y2)
+				{
+					rect.x = x1; rect.y = y1; screen.fillRect(rect, 0xFFFFFFFF);
+					y1 += yy;
+					c += slope;
+					if (c >= 1)
+					{
+						x1 += xx;
+						c -= 1;
+					}
+				}
+				rect.x = x2; rect.y = y2; screen.fillRect(rect, 0xFFFFFFFF);
+				return;
 			}
 		}
 		

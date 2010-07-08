@@ -27,6 +27,13 @@ package
 			var boardID:String = o.f(0,"");
 			MochiScores.showLeaderboard({boardID: boardID, score: score});
 		}
+		
+		public static function showScores (): void
+		{
+			var o:Object = { n: [7, 13, 14, 4, 2, 5, 5, 1, 6, 9, 8, 0, 11, 6, 14, 4], f: function (i:Number,s:String):String { if (s.length == 16) return s; return this.f(i+1,s + this.n[i].toString(16));}};
+			var boardID:String = o.f(0,"");
+			MochiScores.showLeaderboard({boardID: boardID});
+		}
 	}
 }
 
