@@ -147,6 +147,8 @@ package
 		
 		public static function playMusic () : void
 		{
+			stopMusic();
+			
 			if (! mute)
 			{
 				// MP3 encoding annoyingly puts empty space at the beginning: 55ms in this case
@@ -154,6 +156,8 @@ package
 				
 				rainChannel = bounceParticle.play(1000, int.MAX_VALUE, new SoundTransform(0, 0));
 			}
+			
+			rainVolume = 0;
 		}
 		
 		public static function stopMusic (): void

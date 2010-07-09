@@ -51,8 +51,10 @@ package
 			
 			textField.textColor = 0x000000;
 			
+			var textY: Number = (bg.height-textField.height) * 0.5;
+			
 			textField.x = (bg.width-textField.width) * 0.5;
-			textField.y = (bg.height-textField.height) * 0.5;
+			textField.y = textY;
 			
 			/*var _height: Number = textField.height + 10;
 			
@@ -65,8 +67,17 @@ package
 			buttonMode = true;
 			mouseChildren = false;
 			
-			addEventListener(MouseEvent.ROLL_OVER, function (param: * = 0) : void {bitmap2.visible = true; bitmap1.visible = false;});
-			addEventListener(MouseEvent.ROLL_OUT, function (param: * = 0) : void {bitmap1.visible = true; bitmap2.visible = false;});
+			addEventListener(MouseEvent.ROLL_OVER, function (param: * = 0) : void {
+				bitmap2.visible = true;
+				bitmap1.visible = false;
+				textField.y = textY + 2;
+			});
+			
+			addEventListener(MouseEvent.ROLL_OUT, function (param: * = 0) : void {
+				bitmap1.visible = true;
+				bitmap2.visible = false;
+				textField.y = textY;
+			});
 		}
 		
 	}
