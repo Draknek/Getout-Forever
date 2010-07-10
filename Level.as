@@ -41,7 +41,7 @@
 		public var canStart: Boolean = true;
 		public var gameover: Boolean = false;
 		
-		public var lives: int = 0;
+		public var lives: int = 3;
 		
 		public var particles: Vector.<MyParticle> = new Vector.<MyParticle>();
 		//public var particles: Array = new Array();
@@ -114,6 +114,8 @@
 		
 		public override function begin (): void
 		{
+			FP.camera.x = 0;
+			
 			FP.stage.addEventListener(Event.ACTIVATE, focusGain);
 			FP.stage.addEventListener(MouseEvent.MOUSE_DOWN, mouseClick);
 			FP.stage.addEventListener(Event.DEACTIVATE, focusLost);
@@ -317,7 +319,7 @@
 						FP.engine.addChild(menuButton);
 						menuButton.addEventListener(MouseEvent.CLICK, function (): void {
 							Mochi.closeScores();
-							FP.world = new Level();
+							FP.world = new MainMenu();
 						});
 						
 					}
@@ -503,7 +505,7 @@
 				g = (t < 1) ? 1 - t : 0;
 			}
 			
-			FP.buffer.fillRect(rect, 0xFF000000 | (uint(r * 0x30)<<16) | (uint(g * 0x30)<<8) | (uint(b * 0x30)));
+			FP.buffer.fillRect(rect, 0xFF000000 | (uint(r * 0x50)<<16) | (uint(g * 0x50)<<8) | (uint(b * 0x50)));
 			
 			//if (focused || !ballActive) {
 				particles = particles.filter(updateParticlesFilter);

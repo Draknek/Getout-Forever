@@ -5,6 +5,9 @@ package
 	import flash.media.*;
 	import flash.utils.*;
 	
+	import net.flashpunk.FP;
+	import net.flashpunk.utils.Data;
+	
 	public class AudioControl extends Sprite
 	{
 		/*[Embed(source="images/sound-on.png")]
@@ -86,20 +89,27 @@ package
 			
 			playMusic();*/
 		}
+		
+		public static function init (): void
+		{
+			mute = Data.readBool("mute", false);
+		}
 
-		/*public function toggleSound (e : Event) : void
+		public static function toggleSound (e : * = null) : void
 		{
 			mute = ! mute;
 			
-			soundOffImage.visible = mute;
-			soundOnImage.visible = ! mute;
-			
 			if (mute) {
 				stopMusic();
-			} else {
+			} else if (FP.world is Level) {
 				playMusic();
 			}
-		}*/
+			
+			Data.writeBool("mute", mute);
+			
+			Data.save("getout");
+			
+		}
 		
 		/*public static function playMusic () : void
 		{
