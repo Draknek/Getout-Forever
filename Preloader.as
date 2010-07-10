@@ -14,7 +14,9 @@ package
 		
 		private var nextClassName: String;
 		
-		private var mustClick: Boolean = true;
+		private var mustClick: Boolean = false;
+		
+		public var bgColour: Number = 0;
 		
 		public function Preloader (_next: String)
 		{
@@ -29,6 +31,8 @@ package
 
 		public override function update (): void
 		{
+			bgColour += 0.01;
+			
 			if (hasLoaded())
 			{
 				if (mustClick) {
@@ -43,14 +47,36 @@ package
 		
 		public override function render (): void
 		{
+			var t: Number = (bgColour + Input.mouseX / 640.0 / 2.0) % 6;
+			
+			var r: Number, g: Number, b: Number;
+			
+			if (t < 2) {
+				r = 1;
+				g = (t < 1) ? 0 : t - 1;
+				b = (t < 1) ? 1 - t : 0;
+			} else if (t < 4) {
+				t -= 2;
+				g = 1;
+				b = (t < 1) ? 0 : t - 1;
+				r = (t < 1) ? 1 - t : 0;
+			} else {
+				t -= 4;
+				b = 1;
+				r = (t < 1) ? 0 : t - 1;
+				g = (t < 1) ? 1 - t : 0;
+			}
+			
+			FP.buffer.fillRect(FP.bounds, 0xFF000000 | (uint(r * 0x50)<<16) | (uint(g * 0x50)<<8) | (uint(b * 0x50)));
+			
 			if (hasLoaded())
 			{
 				text.scale = 2;
 				
 				text.text = "Click to start";
 				
-				text.x = 320 - text.width * text.scale * 0.5;
-				text.y = 240 - text.height * text.scale * 0.5;
+				text.x = 320 - text.width * 0.5;
+				text.y = 240 - text.height * 0.5;
 			}
 			else
 			{

@@ -92,6 +92,8 @@ package
 		
 		public static function init (): void
 		{
+			Data.load("getout");
+
 			mute = Data.readBool("mute", false);
 		}
 
@@ -108,7 +110,6 @@ package
 			Data.writeBool("mute", mute);
 			
 			Data.save("getout");
-			
 		}
 		
 		/*public static function playMusic () : void
