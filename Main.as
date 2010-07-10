@@ -10,14 +10,12 @@
 		{
 			Data.load("getout");
 			
-			AudioControl.init();
-			
 			super(640, 480, 60, true);
 			
 			//Kongregate.connect(this);
 			Mochi.connect(this);
 			
-			FP.world = new MainMenu();
+			FP.world = new Preloader("MainMenu");
 		}
 	}
 }

@@ -24,6 +24,8 @@
 		
 		public function MainMenu ()
 		{
+			AudioControl.init();
+			
 			do {
 				var r: Number = Math.random();
 				var g: Number = Math.random();
