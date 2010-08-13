@@ -13,6 +13,8 @@
 			Mochi.connect(this);
 			
 			FP.world = new Preloader("MainMenu");
+			
+			FP.console.enable();
 		}
 	}
 }

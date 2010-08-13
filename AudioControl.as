@@ -10,12 +10,6 @@ package
 	
 	public class AudioControl extends Sprite
 	{
-		/*[Embed(source="images/sound-on.png")]
-		public static var soundOnImageSrc:Class;
-		
-		[Embed(source="images/sound-off.png")]
-		public static var soundOffImageSrc:Class;*/
-		
 		public static var mute : Boolean = false;
 		
 		[Embed(source="audio/bounce-paddle.mp3")]
@@ -25,40 +19,45 @@ package
 		public static var bounceBlockSfx:Class;
 		
 		[Embed(source="audio/rain.mp3")]
-		public static var bounceParticleSfx:Class;
+		public static var rainSfx:Class;
 		
 		[Embed(source="audio/death.mp3")]
 		public static var deathSfx:Class;
 		
 		[Embed(source="audio/music3.mp3")]
-		public static var music2Sfx: Class;
+		public static var gentleMusicSfx: Class;
 		
 		[Embed(source="audio/music2.mp3")]
-		public static var music1Sfx: Class;
-		
-		/*private var soundOnImage : Bitmap;
-		private var soundOffImage : Bitmap;*/
+		public static var actionMusicSfx: Class;
 		
 		private static var bouncePaddle : Sound = new bouncePaddleSfx();
 		private static var bounceBlock : Sound = new bounceBlockSfx();
-		private static var bounceParticle : Sound = new bounceParticleSfx();
+		private static var rain : Sound = new rainSfx();
 		private static var death : Sound = new deathSfx();
-		private static var music : Sound = new music1Sfx();
+		private static var actionMusic : Sound = new actionMusicSfx();
+		private static var gentleMusic : Sound = new gentleMusicSfx();
+		private static var music : Sound;
 		
 		private static var musicChannel : SoundChannel;
 		private static var rainChannel : SoundChannel;
 		
 		private static var _rainVolume : Number = 0;
 		
+		private static var fadeTimer: Timer = null;
+		
+		private static var musicPosition: Number = 0;
+		
 		public static function get rainVolume (): Number {
 			return _rainVolume;
 		}
 		
 		public static function set rainVolume (value: Number): void {
-			if (value > 0.5) { value = 0.5; }
+			if (value > 1.0) { value = 1.0; }
 			else if (value < 0.0) { value = 0.0; }
 			
 			if (value == _rainVolume) { return; }
+			
+			if (! rainChannel) { return; }
 			
 			_rainVolume = value;
 			
@@ -67,27 +66,6 @@ package
 			transform.volume = _rainVolume;
 			
 			rainChannel.soundTransform = transform;
-		}
-		
-		public function AudioControl ()
-		{
-			/*soundOnImage = new soundOnImageSrc();
-			soundOffImage = new soundOffImageSrc();
-			
-			addChild(soundOffImage);
-			addChild(soundOnImage);
-			
-			soundOffImage.visible = mute;
-			soundOnImage.visible = ! mute;
-			
-			addEventListener(MouseEvent.CLICK, toggleSound);
-			
-			music = new musicSrc();
-			winSounds = new winSoundsSrc();
-			wrong = new wrongSrc();
-			gameOver = new gameOverSrc();
-			
-			playMusic();*/
 		}
 		
 		public static function init (): void
@@ -112,83 +90,123 @@ package
 			Data.save("getout");
 		}
 		
-		/*public static function playMusic () : void
-		{
-			if (! mute)
-			{
-				musicChannel = music.play();
-				
-				// set up looping variables based on your mp3 encoding software
-				var leader:Number = 55;    // milliseconds gap at the start of the mp3
-				//var follower:Number = 50;  // milliseconds gap at the end of the mp3
-				var placeToStop:Number = 32289;
-				
-				if (musicSyncTimer)
-				{
-					musicSyncTimer.stop();
-				}
-				
-				// run interval to constantly check the position of the mp3
-				// and restart after the initial mp3 gap.
-				musicSyncTimer = new Timer(1);
-				musicSyncTimer.addEventListener(TimerEvent.TIMER, runMe);
-				musicSyncTimer.start();
-				
-				function runMe():void{
-				    if (musicChannel.position > placeToStop) {
-				        musicChannel.stop();
-				        musicChannel = music.play(leader);
-				    }
-				}
-			}
-		}*/
-		
-		/*public static function stopMusic (): void
-		{
-			if (musicChannel) {
-				musicChannel.stop();
-			}
-			
-			if (musicSyncTimer)
-			{
-				musicSyncTimer.stop();
-				musicSyncTimer = null;
-			}
-		}*/
-		
 		public static function playMusic () : void
 		{
 			stopMusic();
 			
+			if (! music) { return; }
+			
 			if (! mute)
 			{
-				// MP3 encoding annoyingly puts empty space at the beginning: 55ms in this case
-				musicChannel = music.play(55, int.MAX_VALUE);
+				if (musicPosition < 55) {
+					musicChannel = music.play(55, int.MAX_VALUE);
+				} else {
+					musicChannel = music.play(musicPosition);
+					
+					musicChannel.addEventListener(Event.SOUND_COMPLETE, onComplete);
+					
+					function onComplete(e:Event = null): void {
+						musicChannel = music.play(55, int.MAX_VALUE);
+					}
+				}
 				
-				rainChannel = bounceParticle.play(1000, int.MAX_VALUE, new SoundTransform(0, 0));
+				rainChannel = rain.play(1000, int.MAX_VALUE, new SoundTransform(rainVolume, 0));
 			}
-			
-			rainVolume = 0;
 		}
 		
 		public static function stopMusic (): void
 		{
+			if (fadeTimer) {
+				fadeTimer.stop();
+				fadeTimer = null;
+			}
+			
 			if (musicChannel) {
+				musicPosition = musicChannel.position;
+				
+				if (music) {
+					musicPosition %= music.length;
+				}
+				
 				musicChannel.stop();
+				musicChannel = null;
 			}
 			
 			if (rainChannel) {
 				rainChannel.stop();
+				rainChannel = null;
 			}
 		}
 		
 		public static function switchMusic (): void
 		{
+			if (musicChannel) {
+				musicChannel.stop();
+			}
+			
+			music = gentleMusic;
+			
+			if (! mute)
+			{
+				// MP3 encoding annoyingly puts empty space at the beginning: 55ms in this case
+				musicChannel = music.play(55, int.MAX_VALUE);
+				musicPosition = 0;
+			}
+		}
+		
+		public static function startGame (): void
+		{
 			stopMusic();
 			
-			music = new music2Sfx();
+			rainVolume = 0;
 			
-			playMusic();
+			music = actionMusic;
+			
+			musicPosition = 0;
+		}
+		
+		public static function fadeOut (): void
+		{
+			if (music == actionMusic) {
+				stopMusic();
+				
+				music = null;
+				
+				return;
+			}
+			
+			music = null;
+			
+			const duration: int = 4000;
+			const inverseFPS: int = 50;
+			const count: int = int.MAX_VALUE;//duration / inverseFPS;
+			
+			fadeTimer = new Timer(inverseFPS, count);
+			
+			fadeTimer.addEventListener(TimerEvent.TIMER, runMe);
+			fadeTimer.start();
+			
+			var volume: Number = 1;
+			
+			function runMe():void{
+			    //volume -= 1.0 / (duration / inverseFPS - 1);
+			    
+			    volume *= 0.97;
+
+				if (! (FP.world is Level)) {
+					rainVolume *= 0.95;
+				}
+
+			    if (volume <= 0.01 && rainVolume <= 0.01) {
+			    	stopMusic();
+			    } else {
+			    	var transform: SoundTransform = musicChannel.soundTransform;
+					
+					transform.volume = volume;
+					
+					musicChannel.soundTransform = transform;
+			    }
+			}
 		}
 		
 		public static function playBouncePaddle () : void
@@ -233,25 +251,10 @@ package
 			}
 		}
 		
-		public static function playBounceParticle () : void
+		public static function playRain () : void
 		{
-			if (! mute)
+			if (! mute && music == gentleMusic)
 			{
-				/*var i : int = (Math.random() * 4);
-				
-				var channel : SoundChannel = bounceParticle.play(i * 125);
-				
-				if (channel)
-				{
-					var timer : Timer = new Timer(100);
-					timer.addEventListener(TimerEvent.TIMER, runMe);
-					timer.start();
-					
-					function runMe():void{
-					    channel.stop();
-					}
-				}*/
-				
 				rainVolume += 0.1;
 			}
 		}

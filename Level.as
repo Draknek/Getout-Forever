@@ -64,8 +64,13 @@
 		public var replayButton: Button;
 		public var menuButton: Button;
 		
+		public var minX: Number = -320;
+		public var maxX: Number = 320;
+		
 		public function Level()
 		{
+			AudioControl.startGame();
+			
 			focusGain();
 			
 			Text.font = "modenine";
@@ -91,7 +96,7 @@
 			
 			alphaBitmap = new BitmapData(640, 480, true, 0xA0000000);
 			
-			AudioControl.playMusic();
+			//AudioControl.playMusic();
 			
 			Mochi.startPlay();
 		}
@@ -157,25 +162,50 @@
 		
 		private function focusGain(e:Event = null):void
 		{
+			if (! focused) {
+				AudioControl.playMusic();
+			}
+			
 			focused = true;
-			Mouse.hide();
+			if (! gameover) {
+				Mouse.hide();
+			}
+			
 		}
 		
 		private function focusLost(e:Event = null):void
 		{
 			focused = false;
 			Mouse.show();
+			AudioControl.stopMusic();
 		}
 		
 		public override function update (): void
 		{
+			if (Input.pressed(Key.M)) {
+				AudioControl.toggleSound();
+			}
+			
 			updateCount++;
 			
-			AudioControl.rainVolume *= 0.99;
+			if (focused) {
+				AudioControl.rainVolume *= 0.99;
+			}
 			
 			bgColour += 0.01;
 			
-			if (gameover) { return; }
+			if (gameover) {
+				if (freeCamera) {
+					if (FP.camera.x <= minX) {
+						velocity.x = Math.abs(velocity.x);
+					} else if (FP.camera.x >= maxX) {
+						velocity.x = -Math.abs(velocity.x);
+					}
+					
+					FP.camera.x += velocity.x;
+				}
+				return;
+			}
 			
 			if (! focused && ballActive) { return; }
 			
@@ -302,6 +332,8 @@
 						
 						Mouse.show();
 						
+						AudioControl.fadeOut();
+						
 						submitButton = new Button("Submit", 225)
 						FP.engine.addChild(submitButton);
 						submitButton.addEventListener(MouseEvent.CLICK, function (): void {
@@ -322,6 +354,33 @@
 							FP.world = new MainMenu();
 						});
 						
+						velocity.x /= Math.abs(velocity.x);
+						velocity.x *= 0.5;
+						
+						minX = 0;
+						maxX = 19;
+						
+						for (var s: String in missing) {
+							s = s.split("x")[0];
+							
+							var i: int = int(s);
+							
+							if (i < minX) {
+								minX = i;
+							}
+							
+							if (i > maxX) {
+								maxX = i;
+							}
+						}
+						
+						maxX += 1;
+						
+						minX *= 32;
+						maxX *= 32;
+						
+						minX -= 320;
+						maxX -= 320;
 					}
 				}
 			}
@@ -440,7 +499,7 @@
 				
 				score.value += 1;
 				
-				AudioControl.playBounceParticle();
+				AudioControl.playRain();
 			}
 			else if (p.y > 490)
 			{

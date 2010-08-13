@@ -8,7 +8,8 @@
 	import flash.display.*;
 	import flash.geom.*;
 	import flash.events.*;
-	import flash.ui.Mouse;
+	import flash.ui.*;
+	import flash.text.*;
 	
 	public class MainMenu extends World
 	{
@@ -19,8 +20,8 @@
 		
 		public var bgColour: Number = 0;
 		
-		public var alan: Text;
-		public var macleod: Text;
+		public var alan: MyTextField;
+		public var macleod: MyTextField;
 		
 		public function MainMenu ()
 		{
@@ -37,17 +38,28 @@
 			
 			title.color = (uint(r*255) << 16) | (uint(g*255) << 8) | uint(b*255);
 			
-			Text.align = "center";
+			/*Text.align = "center";
 			Text.font = "modenine";
-			Text.size = 16;
+			Text.size = 16;*/
 			
-			alan = new Text("Created by Alan Hazelden", 320, 227);
-			macleod = new Text("Music by Kevin MacLeod", 320, 227);
+			var ss:StyleSheet = new StyleSheet();
+            ss.parseCSS("a:hover { text-decoration: underline; } a { text-decoration: none; }");
+			
+			alan = new MyTextField(320, 227, "");
+			alan.htmlText = 'Created by <a href="http://www.draknek.org/" target="_blank">Alan Hazelden</a>';
+			alan.mouseEnabled = true;
+			alan.styleSheet = ss;
+			
+			macleod = new MyTextField(320, 227, "");
+			macleod.htmlText = 'Music by <a href="http://www.incompetech.com/" target="_blank">Kevin MacLeod</a>';
+			macleod.mouseEnabled = true;
+			macleod.styleSheet = ss;
+			macleod.visible = false;
 			
 			alan.x = 320 - alan.width*0.5;
 			macleod.x = 320 - macleod.width*0.5;
 			
-			add(new Entity(0, 0, new Graphiclist(title, alan, macleod)));
+			add(new Entity(0, 0, title));
 			
 			var button: Button;
 			
@@ -89,6 +101,9 @@
 			for each (var b: Button in buttons) {
 				FP.engine.addChild(b);
 			}
+			
+			FP.engine.addChild(alan);
+			FP.engine.addChild(macleod);
 		}
 		
 		public override function end (): void
@@ -96,6 +111,9 @@
 			for each (var b: Button in buttons) {
 				FP.engine.removeChild(b);
 			}
+			
+			FP.engine.removeChild(alan);
+			FP.engine.removeChild(macleod);
 		}
 		
 		public override function update (): void
