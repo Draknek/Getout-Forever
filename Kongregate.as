@@ -30,6 +30,17 @@ package
 			loader.load(request);
 			obj.addChild(loader);
 		}
+		
+		public static function submit (statisticName:String, value:Number):Boolean
+		{
+			if (api) {
+				api.stats.submit(statisticName, value);
+				
+				return true;
+			}
+			
+			return false
+		}
 
 		// This function is called when loading is complete
 		private static function loadComplete(event:Event):void

@@ -14,7 +14,7 @@
 			
 			FP.world = new Preloader("MainMenu");
 			
-			FP.console.enable();
+			//FP.console.enable();
 		}
 	}
 }
