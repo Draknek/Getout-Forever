@@ -74,8 +74,8 @@
 		public var minX: Number = -320;
 		public var maxX: Number = 320;
 		
-		public const BLOCK_W: int = 64;
-		public const BLOCK_H: int = 32;
+		public const BLOCK_W: int = 32;
+		public const BLOCK_H: int = 16;
 		
 		public function Level()
 		{
