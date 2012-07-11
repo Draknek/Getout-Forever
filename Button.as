@@ -44,7 +44,7 @@ package
 			addChild(bitmap1);
 			addChild(bitmap2);
 			
-			x = 320 - bg.width * 0.5;
+			x = FP.width*0.5 - bg.width * 0.5;
 			y = _y;
 			
 			textField = new MyTextField(0, 0, _text, "center", 32);

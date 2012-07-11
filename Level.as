@@ -7,6 +7,7 @@
 	
 	import flash.display.*;
 	import flash.geom.*;
+	import flash.net.*;
 	import flash.events.*;
 	import flash.ui.Mouse;
 	
@@ -21,6 +22,8 @@
 		[Embed(source="paddle.png")]
 		public static var paddleGfx: Class;
 		
+		public static const so:SharedObject = SharedObject.getLocal("getoutforever", "/");
+		
 		public var block: Image = new Image(blockGfx);
 		
 		public var paddleImage: Image = new Image(paddleGfx);
@@ -29,8 +32,8 @@
 		
 		public var rect: Rectangle = new Rectangle();
 		
-		public var ball: Point = new Point(400, 480 - 14);
-		public var oldBall: Point = new Point(400, 480 - 14);
+		public var ball: Point = new Point(400, FP.height - (paddleImage.height + 6));
+		public var oldBall: Point = new Point(400, FP.height - (paddleImage.height + 6));
 		public var velocity: Point = new Point(3.5, 3);
 		public var paddle: Number = 320 - 64;
 		
@@ -40,6 +43,8 @@
 		public var ballActive: Boolean = false;
 		public var canStart: Boolean = true;
 		public var gameover: Boolean = false;
+		
+		public var paused:Boolean = false;
 		
 		public var lives: int = 3;
 		
@@ -59,13 +64,18 @@
 		
 		public var score: NumberString;
 		public var scoreText: Text;
+		public var prevScore: Text;
 		
 		public var submitButton: Button;
 		public var replayButton: Button;
 		public var menuButton: Button;
+		public var exitButton: Button;
 		
 		public var minX: Number = -320;
 		public var maxX: Number = 320;
+		
+		public const BLOCK_W: int = 64;
+		public const BLOCK_H: int = 32;
 		
 		public function Level()
 		{
@@ -74,11 +84,22 @@
 			focusGain();
 			
 			Text.font = "modenine";
-			Text.size = 32;
+			Text.size = 40;
 			Text.align = "center";
 			
-			scoreText = new Text("0", 320 - 50, 160, 100);
+			scoreText = new Text("0", FP.width*0.5 - 50, 160, 100);
 			scoreText.scrollX = 0;
+			scoreText.y = BLOCK_H*8+10;
+			
+			if (! so.data.highscore) so.data.highscore = 0;
+			
+			
+			prevScore = new Text("", FP.width*0.5 - 250, 160, 500);
+			prevScore.scrollX = 0;
+			prevScore.size = 30;
+			//prevScore.x = FP.width*0.5 - prevScore.width*0.5;
+			prevScore.y = BLOCK_H*8+10 + 50;
+			
 			
 			score = new NumberString();
 			
@@ -86,15 +107,12 @@
 			
 			colourOffset = Math.random() * int.MAX_VALUE;
 			
-			missing["-1x29"] = true;
-			missing["20x29"] = true;
+			var lowest:int = 18;
 			
-			/*for (var j: int = 8; j < 480/16; j++) {
-				missing["-1x" + j] = true;
-				missing["20x" + j] = true;
-			}*/
+			missing["-1x"+lowest] = true;
+			missing[int(FP.width / BLOCK_W)+"x"+lowest] = true;
 			
-			alphaBitmap = new BitmapData(640, 480, true, 0xA0000000);
+			alphaBitmap = new BitmapData(FP.width, FP.height, true, 0xA0000000);
 			
 			//AudioControl.playMusic();
 			
@@ -103,7 +121,7 @@
 		
 		public function getColour (ix: int, iy: int): uint
 		{
-			var colour: uint = Math.floor(ix / 20) * 98317 + Math.floor(iy / 2) * 393241 + 12289 + colourOffset;
+			var colour: uint = Math.floor(ix / (FP.width / BLOCK_W)) * 98317 + Math.floor(iy / 2) * 393241 + 12289 + colourOffset;
 			
 			do {
 				colour = uint(colour * 374321);
@@ -135,6 +153,7 @@
 			if (submitButton) FP.engine.removeChild(submitButton);
 			if (replayButton) FP.engine.removeChild(replayButton);
 			if (menuButton) FP.engine.removeChild(menuButton);
+			if (exitButton) FP.engine.removeChild(exitButton);
 		}
 		
 		private function mouseClick(e:Event):void
@@ -148,12 +167,12 @@
 				velocity.y = -3.0 - 0.5 * (Math.abs(velocity.y) - 3.0);
 				velocity.x = 3.5 * Math.abs(velocity.y) / 3.0
 				
-				if (ball.x - FP.camera.x < 320 - 3) {
+				if (ball.x - FP.camera.x < FP.width*0.5 - 3) {
 					velocity.x *= -1;
 				}
 				
 				if (freeCamera) {
-					velocity.x += (Input.mouseX - 320) * 0.025;
+					velocity.x += (Input.mouseX - FP.width*0.5) * 0.025;
 				}
 			}
 			
@@ -186,13 +205,19 @@
 				AudioControl.toggleSound();
 			}
 			
+			if (Input.pressed(Key.SPACE)) {
+				paused = ! paused;
+			}
+			
+			if (paused) return;
+			
 			updateCount++;
 			
 			if (focused) {
 				AudioControl.rainVolume *= 0.99;
 			}
 			
-			bgColour += 0.01;
+			bgColour += 0.002;
 			
 			if (gameover) {
 				if (freeCamera) {
@@ -209,12 +234,12 @@
 			
 			if (! focused && ballActive) { return; }
 			
-			paddle = Input.mouseX - 64 + FP.camera.x;
+			paddle += (Input.mouseX - paddleImage.width*0.5 + FP.camera.x - paddle)*0.1;
 			
 			if (! ballActive) {
 				if (! canStart) {
-					var dx: Number = paddle + 64 - 3 - ball.x;
-					var dy: Number = 480 - 14 - ball.y;
+					var dx: Number = paddle + paddleImage.width*0.5 - 3 - ball.x;
+					var dy: Number = FP.height - (6 + paddleImage.height) - ball.y;
 					var dz: Number = Math.sqrt(dx*dx + dy*dy);
 					
 					const speed: Number = velocity.x;
@@ -231,14 +256,14 @@
 					}
 				}
 				
-				ball.x = paddle + 64 - 3;
-				ball.y = 480 - 14;
+				ball.x = paddle + paddleImage.width*0.5 - 3;
+				ball.y = FP.height - (paddleImage.height + 6);
 				
 				return;
 			}
 			
 			if (freeCamera) {
-				FP.camera.x += (Input.mouseX - 320) * 0.05;
+				FP.camera.x += (Input.mouseX - FP.width*0.5) * 0.05;
 			}
 			
 			ball.x += velocity.x;
@@ -248,8 +273,8 @@
 			
 			var tmp: int;
 			
-			var ix1: int = Math.floor(ball.x / 32);
-			var ix2: int = Math.floor((ball.x + 6) / 32);
+			var ix1: int = Math.floor(ball.x / BLOCK_W);
+			var ix2: int = Math.floor((ball.x + 6) / BLOCK_W);
 			
 			if (velocity.x < 0) {
 				tmp = ix1;
@@ -257,8 +282,8 @@
 				ix2 = tmp;
 			}
 			
-			var iy1: int = Math.floor(ball.y / 16);
-			var iy2: int = Math.floor((ball.y + 6) / 16);
+			var iy1: int = Math.floor(ball.y / BLOCK_H);
+			var iy2: int = Math.floor((ball.y + 6) / BLOCK_H);
 			
 			if (velocity.y < 0) {
 				tmp = iy1;
@@ -271,22 +296,22 @@
 			var bounced: Boolean = false;
 			
 			if (ball.y < 0) { velocity.y *= -1; ball.y = 0; bounced = true; }
-			else if (ball.y > 480-6-8) {
+			else if (ball.y > FP.height-6-paddleImage.height) {
 				var paddleDiff: Number = ball.x - paddle;
 				
-				if (paddleDiff > -6 && paddleDiff < 128) {
-					velocity.x = ((paddleDiff + 6) - 67) * 0.05 * Math.abs(velocity.y) / 3.0;
+				if (paddleDiff > -6 && paddleDiff < paddleImage.width) {
+					velocity.x = ((paddleDiff + 6) - (paddleImage.width+6)*0.5) * 0.05 * Math.abs(velocity.y) / 3.0;
 					
 					if (freeCamera) {
-						velocity.x += (Input.mouseX - 320) * 0.025;
+						velocity.x += (Input.mouseX - FP.width*0.5) * 0.025;
 					}
 					
 					velocity.y *= -1;
 					velocity.y -= 0.05;
-					ball.y = 480-6-8;
+					ball.y = FP.height-6-paddleImage.height;
 					
 					bounced = true;
-				} else if (ball.y > 480) {
+				} else if (ball.y > FP.height) {
 					ballActive = false;
 					
 					AudioControl.playDeath();
@@ -318,10 +343,10 @@
 					}
 					
 					if (lives > 0) {
-						ball.x = FP.camera.x + 20 * lives;
-						ball.y = 16*8 + 20;
-						oldBall.x = FP.camera.x + 20 * lives;
-						oldBall.y = 16*8 + 20;
+						ball.x = FP.camera.x + 20 * lives - 10;
+						ball.y = BLOCK_H*8 + 10;
+						oldBall.x = ball.x;
+						oldBall.y = ball.y;
 						velocity.x = 1;
 						
 						lives--;
@@ -334,25 +359,21 @@
 						
 						AudioControl.fadeOut();
 						
-						submitButton = new Button("Submit", 225)
-						FP.engine.addChild(submitButton);
-						submitButton.addEventListener(MouseEvent.CLICK, function (): void {
-							Mochi.submitScore(score.value);
-						});
-						
-						replayButton = new Button("Replay", 300)
+						replayButton = new Button("Replay", 400)
 						FP.engine.addChild(replayButton);
 						replayButton.addEventListener(MouseEvent.CLICK, function (): void {
-							Mochi.closeScores();
+							//Mochi.closeScores();
 							FP.world = new Level();
 						});
 						
-						menuButton = new Button("Menu", 375)
-						FP.engine.addChild(menuButton);
-						menuButton.addEventListener(MouseEvent.CLICK, function (): void {
-							Mochi.closeScores();
-							FP.world = new MainMenu();
-						});
+						/*exitButton = new Button("Exit", 475)
+						FP.engine.addChild(exitButton);
+						exitButton.addEventListener(MouseEvent.CLICK, function (): void {
+							var stage:* = FP.stage;
+							stage.nativeWindow.close();
+						});*/
+						
+						if (!prevScore.text) prevScore.text = "High score: " + so.data.highscore;
 						
 						velocity.x /= Math.abs(velocity.x);
 						velocity.x *= 0.5;
@@ -376,8 +397,8 @@
 						
 						maxX += 1;
 						
-						minX *= 32;
-						maxX *= 32;
+						minX *= BLOCK_W;
+						maxX *= BLOCK_W;
 						
 						minX -= 320;
 						maxX -= 320;
@@ -393,7 +414,7 @@
 			var ix: int = ix1;
 			var iy: int = iy2;
 			
-			if (((iy < 8 && iy > -1) || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
+			if (((iy < 8 && iy > -1) || ix == -1 || ix == int(FP.width / BLOCK_W)) && ! missing[lookup = ix + "x" + iy]) {
 				missing[lookup] = true;
 				
 				var points: int = 10 + int((7 - iy) / 2) * 20;
@@ -414,7 +435,7 @@
 			ix = ix2;
 			iy = iy1;
 			
-			if (((iy < 8 && iy > -1) || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
+			if (((iy < 8 && iy > -1) || ix == -1 || ix == int(FP.width / BLOCK_W)) && ! missing[lookup = ix + "x" + iy]) {
 				missing[lookup] = true;
 				
 				points = 10 + int((7 - iy) / 2) * 20;
@@ -435,7 +456,7 @@
 			ix = ix2;
 			iy = iy2;
 			
-			if (! hit && ((iy < 8 && iy > -1) || ix == -1 || ix == 20) && ! missing[lookup = ix + "x" + iy]) {
+			if (! hit && ((iy < 8 && iy > -1) || ix == -1 || ix == int(FP.width / BLOCK_W)) && ! missing[lookup = ix + "x" + iy]) {
 				missing[lookup] = true;
 				
 				points = 10 + int((7 - iy) / 2) * 20;
@@ -460,19 +481,25 @@
 				AudioControl.playBounceBlock();
 			}
 			
+			if (score.value > so.data.highscore) {
+				prevScore.text = "New record!";
+				so.data.highscore = score.value;
+				so.flush();
+			}
+			
 			if (bounced) {
 				AudioControl.playBouncePaddle();
 			}
 			
 			if (! freeCamera) {
-				if (ball.x < -32 || ball.x > 640+32-6) {
+				if (ball.x < -32 || ball.x > FP.width+32-6) {
 					freeCamera = true;
 					AudioControl.switchMusic();
 				}
 			}
 			
 			/*if (ball.x - FP.camera.x < 0) { ball.x = FP.camera.x; velocity.x = Math.abs(velocity.x); }
-			else if (ball.x - FP.camera.x > 640-6) { ball.x = FP.camera.x + 640-6; velocity.x = -Math.abs(velocity.x); }*/
+			else if (ball.x - FP.camera.x > FP.width-6) { ball.x = FP.camera.x + FP.width-6; velocity.x = -Math.abs(velocity.x); }*/
 		}
 		
 		private function updateParticlesFilter (p: MyParticle, index: int, arr: Vector.<MyParticle>): Boolean
@@ -486,9 +513,9 @@
 			//p.dx *= 0.99;
 			p.dy += 0.2;
 			
-			if (p.y > 480 - 8 && p.x > paddle && p.x < paddle + 128) {
+			if (p.y > FP.height - paddleImage.height && p.x > paddle && p.x < paddle + paddleImage.width) {
 				p.dy = -Math.abs(p.dy) * 0.5;
-				p.oldy = 480-8;
+				p.oldy = FP.height-paddleImage.height;
 				p.y = p.oldy + p.dy;
 				
 				if (p.dy > -1) {
@@ -501,7 +528,7 @@
 				
 				AudioControl.playRain();
 			}
-			else if (p.y > 490)
+			else if (p.y > FP.height + 10)
 			{
 				p.recycleNext = recycleParticle;
 				recycleParticle = p;
@@ -515,8 +542,8 @@
 		
 		public var lastX: Number = 0;
 		
-		public var blurBuffer1: BitmapData = new BitmapData(640, 480, true, 0);
-		public var blurBuffer2: BitmapData = new BitmapData(640, 480, true, 0);
+		public var blurBuffer1: BitmapData = new BitmapData(FP.width, FP.height, true, 0);
+		public var blurBuffer2: BitmapData = new BitmapData(FP.width, FP.height, true, 0);
 		public var colorTransform: ColorTransform = new ColorTransform(1, 1, 1, 0.8);
 		
 		public override function render (): void
@@ -527,8 +554,8 @@
 			if (!focused && ballActive && lastBuffer) {
 				rect.x = 0;
 				rect.y = 0;
-				rect.width = 640;
-				rect.height = 480;
+				rect.width = FP.width;
+				rect.height = FP.height;
 				
 				FP.buffer.copyPixels(lastBuffer, rect, FP.zero);
 				
@@ -541,10 +568,10 @@
 			
 			rect.x = 0;
 			rect.y = 0;
-			rect.width = 640;
-			rect.height = 480;
+			rect.width = FP.width;
+			rect.height = FP.height;
 			
-			var t: Number = (bgColour + Input.mouseX / 640.0 / 2.0) % 6;
+			var t: Number = (bgColour) % 6;
 			
 			var r: Number, g: Number, b: Number;
 			
@@ -567,8 +594,9 @@
 			FP.buffer.fillRect(rect, 0xFF000000 | (uint(r * 0x50)<<16) | (uint(g * 0x50)<<8) | (uint(b * 0x50)));
 			
 			//if (focused || !ballActive) {
+			if (! paused) {
 				particles = particles.filter(updateParticlesFilter);
-			//}
+			}
 			
 			var point: Point = new Point();
 			
@@ -577,47 +605,43 @@
 			/*if (lastBuffer != null) {
 				rect.x = 0;
 				rect.y = 0;
-				rect.width = 640;
-				rect.height = 480;
+				rect.width = FP.width;
+				rect.height = FP.height;
 				
 				//FP.buffer.copyPixels(lastBuffer, rect, point, alphaBitmap, point, true);
 				
 				FP.buffer.merge(lastBuffer, rect, FP.zero, 0xA0, 0xA0, 0xA0, 0xA0);
 			}*/
 			
-			lastBuffer = blurBuffer1;
-			blurBuffer1 = blurBuffer2;
-			blurBuffer2 = lastBuffer;
+			if (! paused) {
+				lastBuffer = blurBuffer1;
+				blurBuffer1 = blurBuffer2;
+				blurBuffer2 = lastBuffer;
 			
-			point.x = scrollX;
-			point.y = 0;
+				point.x = scrollX;
+				point.y = 0;
 			
-			blurBuffer1.fillRect(blurBuffer1.rect, 0);
-			blurBuffer1.copyPixels(blurBuffer2, blurBuffer2.rect, point);
-			blurBuffer1.colorTransform(blurBuffer1.rect, colorTransform);
+				blurBuffer1.fillRect(blurBuffer1.rect, 0);
+				blurBuffer1.copyPixels(blurBuffer2, blurBuffer2.rect, point);
+				blurBuffer1.colorTransform(blurBuffer1.rect, colorTransform);
+			}
 			
 			// render blocks
 			
-			rect.width = 32;
-			rect.height = 16;
-			
-			for (var i: int = 0; i < 22; i++) {
-				var ix: int = Math.floor(FP.camera.x / 32) + i - 1;
+			for (var i: int = 0; i < FP.width/BLOCK_W + 2; i++) {
+				var ix: int = Math.floor(FP.camera.x / BLOCK_W) + i - 1;
 				
-				for (var j: int = 0; j < 480/16; j++) {
+				for (var j: int = 0; j < FP.height/BLOCK_H; j++) {
 					if (j > 7) {
-						if (ix != -1 && ix != 20) { break; }
+						if (ix != -1 && ix != int(FP.width / BLOCK_W)) { break; }
 					}
 					
 					var lookup: String = ix + "x" + j;
 					
 					if (missing[lookup]) { continue; }
 					
-					rect.x = ix * 32 - FP.camera.x;
-					rect.y = j * 16;
-					
-					point.x = ix * 32;
-					point.y = j * 16;
+					point.x = ix * BLOCK_W;
+					point.y = j * BLOCK_H;
 					
 					block.color = getColour(ix, j);
 					
@@ -678,8 +702,8 @@
 			// render lives
 			
 			for (i = 1; i <= lives; i++) {
-				rect.x = 20 * i;
-				rect.y = 16*8 + 20;
+				rect.x = 20 * i - 10;
+				rect.y = BLOCK_H*8 + 10;
 				
 				FP.buffer.fillRect(rect, 0xFFFFFFFF);
 			}
@@ -689,7 +713,7 @@
 			// render paddle
 			
 			point.x = paddle;
-			point.y = 480-8;
+			point.y = FP.height-paddleImage.height;
 			
 			paddleImage.render(point, FP.camera);
 			
@@ -698,20 +722,25 @@
 			
 			scoreText.render(point, FP.camera);
 			
+			point.x = 0;
+			point.y = 0;
+			
+			if (prevScore) prevScore.render(point, FP.camera);
+			
 			lastBuffer = FP.buffer;
 		}
 		
 		public function addParticles (ix: int, iy: int): void
 		{
-			const bx: int = ix * 32;
-			const by: int = iy * 16;
+			const bx: int = ix * BLOCK_W;
+			const by: int = iy * BLOCK_H;
 			
 			var colour: uint = (0xFF000000 | getColour(ix, iy));
 			
 			for (var i: int = 0; i < 8; i++) {
 				for (var j: int = 0; j < 4; j++) {
-					const px: int = bx + i*4 + 2;
-					const py: int = by + j*4 + 2;
+					const px: int = bx + i*8 + 4;
+					const py: int = by + j*8 + 4;
 					
 					var dx: Number = (px - ball.x - 2);
 					var dy: Number = (py - ball.y - 2);

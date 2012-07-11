@@ -36,6 +36,9 @@
 			
 			var title: Image = new Image(titleGfx);
 			
+			title.x = FP.width*0.5 - title.width*0.5;
+			title.y += 25;
+			
 			title.color = (uint(r*255) << 16) | (uint(g*255) << 8) | uint(b*255);
 			
 			/*Text.align = "center";
@@ -43,21 +46,25 @@
 			Text.size = 16;*/
 			
 			var ss:StyleSheet = new StyleSheet();
-            ss.parseCSS("a:hover { text-decoration: underline; } a { text-decoration: none; }");
+            ss.parseCSS("a { text-decoration: none; color: #FFFF00; } a:hover { text-decoration: underline; }");
 			
-			alan = new MyTextField(320, 227, "");
+			alan = new MyTextField(FP.width*0.5, 227, "");
 			alan.htmlText = 'Created by <a href="http://www.draknek.org/" target="_blank">Alan Hazelden</a>';
 			alan.mouseEnabled = true;
 			alan.styleSheet = ss;
 			
-			macleod = new MyTextField(320, 227, "");
+			macleod = new MyTextField(FP.width*0.5, 227, "");
 			macleod.htmlText = 'Music by <a href="http://www.incompetech.com/" target="_blank">Kevin MacLeod</a>';
 			macleod.mouseEnabled = true;
 			macleod.styleSheet = ss;
-			macleod.visible = false;
+			//macleod.visible = false;
 			
-			alan.x = 320 - alan.width*0.5;
-			macleod.x = 320 - macleod.width*0.5;
+			alan.x = FP.width*0.5 - alan.width*0.5;
+			macleod.x = FP.width*0.5 - macleod.width*0.5;
+			macleod.y += 25;
+			
+			alan.y += 50;
+			macleod.y += 50;
 			
 			add(new Entity(0, 0, title));
 			
@@ -69,13 +76,13 @@
 				FP.world = new Level();
 			});
 			
-			button = new Button("Highscores", 310)
+			/*button = new Button("Highscores", 310)
 			buttons.push(button);
 			button.addEventListener(MouseEvent.CLICK, function (): void {
 				Mochi.showScores();
-			});
+			});*/
 			
-			button = new Button(AudioControl.mute ? "Audio: off" : "Audio: on", 365)
+			/*button = new Button(AudioControl.mute ? "Audio: off" : "Audio: on", 365)
 			buttons.push(button);
 			var audioButton: Button = button;
 			button.addEventListener(MouseEvent.CLICK, function (): void {
@@ -88,11 +95,26 @@
 				}
 			});
 			
-			button = new Button("More games", 420)
+			button = new Button("Exit", 255)
 			buttons.push(button);
 			button.addEventListener(MouseEvent.CLICK, function (): void {
-				// nothing
-			});
+				var stage:* = FP.stage;
+				stage.nativeWindow.close();
+			});*/
+			
+			var h:int = button.height*buttons.length;
+			var start:int = macleod.y + macleod.height;
+			var space:int = FP.height - start - h;
+			space /= (buttons.length + 1);
+			
+			//space = 25;
+			
+			start += space + 10;
+			
+			for each (button in buttons) {
+				button.y = start;
+				start += space + button.height;
+			}
 		}
 		
 		public override function begin (): void
@@ -120,18 +142,18 @@
 		{
 			bgColour += 0.01;
 			
-			if (bgColour % 4 < 2) {
+			/*if (bgColour % 4 < 2) {
 				alan.visible = true;
 				macleod.visible = false;
 			} else {
 				alan.visible = false;
 				macleod.visible = true;
-			}
+			}*/
 		}
 		
 		public override function render (): void
 		{
-			var t: Number = (bgColour + Input.mouseX / 640.0 / 2.0) % 6;
+			var t: Number = (bgColour + Input.mouseX / FP.width / 2.0) % 6;
 			
 			var r: Number, g: Number, b: Number;
 			
