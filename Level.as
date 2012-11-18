@@ -28,16 +28,15 @@
 		
 		public static const so:SharedObject = SharedObject.getLocal("getoutforever", "/");
 		
-		public var block: Image = new Image(blockGfxNormal);
-		
-		public var paddleImage: Image = new Image(paddleGfxNormal);
+		public var block: Image;
+		public var paddleImage: Image;
 		
 		public var missing: Object = {};
 		
 		public var rect: Rectangle = new Rectangle();
 		
-		public var ball: Point = new Point(400, FP.height - (paddleImage.height + 6));
-		public var oldBall: Point = new Point(400, FP.height - (paddleImage.height + 6));
+		public var ball: Point;
+		public var oldBall: Point;
 		public var velocity: Point = new Point(3.5, 3);
 		public var paddle: Number = 320 - 64;
 		
@@ -78,11 +77,28 @@
 		public var minX: Number = -320;
 		public var maxX: Number = 320;
 		
-		public const BLOCK_W: int = 32;
-		public const BLOCK_H: int = 16;
+		public var BLOCK_W: int = 32;
+		public var BLOCK_H: int = 16;
 		
 		public function Level()
 		{
+			if (FP.width > 800) {
+				BLOCK_W = 64;
+				BLOCK_H = 32;
+				
+				block = new Image(blockGfxLarge);
+				paddleImage = new Image(paddleGfxLarge);
+			} else {
+				BLOCK_W = 32;
+				BLOCK_H = 16;
+				
+				block = new Image(blockGfxNormal);
+				paddleImage = new Image(paddleGfxNormal);
+			}
+			
+			ball = new Point(400, FP.height - (paddleImage.height + 6));
+			oldBall = new Point(400, FP.height - (paddleImage.height + 6));
+			
 			AudioControl.startGame();
 			
 			focusGain();

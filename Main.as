@@ -2,12 +2,39 @@
 {
 	import net.flashpunk.*;
 	
+	import flash.system.*;
+	
 	[SWF(width = "640", height = "480", backgroundColor="#000000")]
 	public class Main extends Engine
 	{
+		public static var touchscreen:Boolean = false;
+		public static var isAndroid:Boolean = false;
+		public static var isIOS:Boolean = false;
+		public static var isPlaybook:Boolean = false;
+		
 		public function Main() 
 		{
-			super(640, 480, 60, true);
+			if (Capabilities.manufacturer.toLowerCase().indexOf("ios") != -1) {
+				isIOS = true;
+				touchscreen = true;
+			}
+			else if (Capabilities.manufacturer.toLowerCase().indexOf("android") >= 0) {
+				isAndroid = true;
+				touchscreen = true;
+			} else if (Capabilities.os.indexOf("QNX") >= 0) {
+				isPlaybook = true;
+				touchscreen = true;
+			}
+			
+			var w:int = 640;
+			var h:int = 480;
+			
+			if (touchscreen) {
+				w = stage.fullScreenWidth;
+				h = stage.fullScreenHeight;
+			}
+			
+			super(w, h, 60, true);
 			
 			//Kongregate.connect(this);
 			Mochi.connect(this);
