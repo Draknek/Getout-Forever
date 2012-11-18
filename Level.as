@@ -16,17 +16,21 @@
 		[Embed(source="MODENINE.TTF", fontName='modenine', mimeType='application/x-font')]
 		public static var modeNineFont : Class;
 		
-		[Embed(source="block.png")]
-		public static var blockGfx: Class;
+		[Embed(source="images/large/block.png")]
+		public static const blockGfxLarge: Class;
+		[Embed(source="images/large/paddle.png")]
+		public static const paddleGfxLarge: Class;
 		
-		[Embed(source="paddle.png")]
-		public static var paddleGfx: Class;
+		[Embed(source="images/normal/block.png")]
+		public static const blockGfxNormal: Class;
+		[Embed(source="images/normal/paddle.png")]
+		public static const paddleGfxNormal: Class;
 		
 		public static const so:SharedObject = SharedObject.getLocal("getoutforever", "/");
 		
-		public var block: Image = new Image(blockGfx);
+		public var block: Image = new Image(blockGfxNormal);
 		
-		public var paddleImage: Image = new Image(paddleGfx);
+		public var paddleImage: Image = new Image(paddleGfxNormal);
 		
 		public var missing: Object = {};
 		

@@ -13,7 +13,7 @@
 	
 	public class MainMenu extends World
 	{
-		[Embed(source="title.png")]
+		[Embed(source="images/title.png")]
 		public static var titleGfx: Class;
 		
 		public var buttons: Array = [];

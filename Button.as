@@ -9,10 +9,10 @@ package
 	
 	public class Button extends Sprite
 	{
-		[Embed(source="button.png")]
+		[Embed(source="images/button.png")]
 		public static var buttonGfx : Class;
 		
-		[Embed(source="button-hover.png")]
+		[Embed(source="images/button-hover.png")]
 		public static var buttonHoverGfx : Class;
 		
 		public var textField: MyTextField;
