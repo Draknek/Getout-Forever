@@ -192,7 +192,7 @@
 				}
 				
 				if (freeCamera) {
-					velocity.x += (Input.mouseX - FP.width*0.5) * 0.025;
+					velocity.x += (Main.mouseX - FP.width*0.5) * 0.025;
 				}
 			}
 			
@@ -254,7 +254,7 @@
 			
 			if (! focused && ballActive) { return; }
 			
-			paddle += (Input.mouseX - paddleImage.width*0.5 + FP.camera.x - paddle)*0.1;
+			paddle += (Main.mouseX - paddleImage.width*0.5 + FP.camera.x - paddle)*0.1;
 			
 			if (! ballActive) {
 				if (! canStart) {
@@ -283,7 +283,7 @@
 			}
 			
 			if (freeCamera) {
-				FP.camera.x += (Input.mouseX - FP.width*0.5) * 0.05;
+				FP.camera.x += (Main.mouseX - FP.width*0.5) * 0.05;
 			}
 			
 			ball.x += velocity.x;
@@ -323,7 +323,7 @@
 					velocity.x = ((paddleDiff + 6) - (paddleImage.width+6)*0.5) * 0.05 * Math.abs(velocity.y) / 3.0;
 					
 					if (freeCamera) {
-						velocity.x += (Input.mouseX - FP.width*0.5) * 0.025;
+						velocity.x += (Main.mouseX - FP.width*0.5) * 0.025;
 					}
 					
 					velocity.y *= -1;

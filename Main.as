@@ -1,6 +1,7 @@
 ﻿package
 {
 	import net.flashpunk.*;
+	import net.flashpunk.utils.*;
 	
 	import flash.system.*;
 	
@@ -11,6 +12,8 @@
 		public static var isAndroid:Boolean = false;
 		public static var isIOS:Boolean = false;
 		public static var isPlaybook:Boolean = false;
+		
+		public static var mouseX:Number = 0.0;
 		
 		public function Main() 
 		{
@@ -42,6 +45,17 @@
 			FP.world = new Preloader("MainMenu");
 			
 			//FP.console.enable();
+			
+			Main.mouseX = w*0.5;
+		}
+		
+		public override function update ():void
+		{
+			if (! touchscreen || Input.mouseDown) {
+				Main.mouseX = Input.mouseX;
+			}
+			
+			super.update();
 		}
 	}
 }
